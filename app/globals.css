@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   TradeLog Pro — Design System
+   Modern Tech: near-black + electric cyan, Geist Sans + Geist Mono
+   ------------------------------------------------------------------ */
+
+/* ── Dark theme (default) ────────────────────────────────────────── */
+:root {
+  /* RGB channel values — used by Tailwind for opacity-modifier support
+     e.g. bg-bg/80 → rgba(10,10,11,0.8)  border-border/50 → rgba(31,31,35,0.5) */
+  --bg-rgb:            10 10 11;
+  --bg-surface-rgb:    17 17 19;
+  --bg-elevated-rgb:   24 24 27;
+  --border-rgb:        31 31 35;
+  --border-strong-rgb: 39 39 42;
+  --text-rgb:          250 250 250;
+  --text-muted-rgb:    161 161 170;
+  --text-dim-rgb:      113 113 122;
+
+  /* Hex convenience vars — used by custom CSS classes (.card, .btn-*, etc.) */
+  --bg:           #0A0A0B;
+  --bg-surface:   #111113;
+  --bg-elevated:  #18181B;
+  --border:       #1F1F23;
+  --border-strong:#27272A;
+  --text:         #FAFAFA;
+  --text-muted:   #A1A1AA;
+  --text-dim:     #71717A;
+  --accent:       #00D9FF;
+  --signal-green: #22C55E;
+  --signal-red:   #EF4444;
+}
+
+/* ── Light theme ─────────────────────────────────────────────────── */
+html.light {
+  --bg-rgb:            255 255 255;
+  --bg-surface-rgb:    244 244 245;
+  --bg-elevated-rgb:   228 228 231;
+  --border-rgb:        228 228 231;
+  --border-strong-rgb: 212 212 216;
+  --text-rgb:          9 9 11;
+  --text-muted-rgb:    82 82 91;
+  --text-dim-rgb:      113 113 122;
+
+  --bg:           #FFFFFF;
+  --bg-surface:   #F4F4F5;
+  --bg-elevated:  #E4E4E7;
+  --border:       #E4E4E7;
+  --border-strong:#D4D4D8;
+  --text:         #09090B;
+  --text-muted:   #52525B;
+  --text-dim:     #71717A;
+}
+
+/* Light mode scrollbar */
+html.light ::-webkit-scrollbar-track { background: #F4F4F5; }
+html.light ::-webkit-scrollbar-thumb { background: #D4D4D8; }
+
+/* ── Base ────────────────────────────────────────────────────────── */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0A0A0B; }
+::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 217, 255, 0.3); }
+
+/* ── Custom utility classes ─────────────────────────────────────── */
+
+/* Primary button — cyan bg, black text (same in both themes) */
+.btn-primary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.4rem;
+  background: #00D9FF;
+  color: #0A0A0B;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background: #00C4E8;
+  box-shadow: 0 0 28px rgba(0, 217, 255, 0.55), 0 0 56px rgba(0, 217, 255, 0.2);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; pointer-events: none; }
+
+/* Secondary button — transparent, theme-aware border */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.4rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+  border-color: rgba(0, 217, 255, 0.45);
+  color: var(--text);
+  box-shadow: 0 0 18px rgba(0, 217, 255, 0.1), inset 0 0 12px rgba(0, 217, 255, 0.04);
+}
+
+/* Card — theme-aware surface */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  border-color: rgba(0, 217, 255, 0.3);
+  box-shadow: 0 0 28px rgba(0, 217, 255, 0.07), 0 0 0 1px rgba(0, 217, 255, 0.05);
+}
+
+/* Mono label */
+.mono-label {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* Reusable form input — theme-aware */
+.form-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  color: var(--text);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.form-input:focus { border-color: rgba(0, 217, 255, 0.5); }
+.form-input option { background: var(--bg-surface); color: var(--text); }
+
+/* Cyan glow */
+.glow-cyan {
+  filter: drop-shadow(0 0 24px rgba(0, 217, 255, 0.25));
+}
+
+/* Subtle grid background */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 217, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 217, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Tabular nums */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Hairline divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+}
+
+/* Nav underline animation */
+.nav-link { position: relative; padding: 0.5rem 0; }
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 0; height: 1px;
+  background: #00D9FF;
+  transition: width 0.3s ease;
+}
+.nav-link:hover::after { width: 100%; }
+
+/* Ticker tape */
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker 40s linear infinite;
+}
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Stagger reveal */
+.reveal { opacity: 0; transform: translateY(18px); }
+.reveal.in {
+  animation: fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
