@@ -20,11 +20,20 @@ export default function LoginPage() {
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        setError('Please confirm your email first. Check your inbox for the confirmation link.');
+      } else {
+        setError(error.message);
+      }
+      return;
+    }
     router.push('/dashboard');
     router.refresh();
   }
 
+  // Google OAuth — requires: Supabase Dashboard → Authentication → Providers → Google (enable + add Client ID/Secret)
+  // and Google Cloud Console → OAuth 2.0 credentials with this origin + /auth/callback as authorised redirect URI.
   async function signInWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, BookOpen, BarChart3, Brain, Settings, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 
 const NAV = [
   { href: '/dashboard',           label: 'Overview',  icon: LayoutDashboard },
@@ -12,10 +13,29 @@ const NAV = [
   { href: '/coach',               label: 'AI Coach',  icon: Brain },
 ];
 
+const PLAN_LABELS: Record<string, string> = {
+  trial:     'Free Trial',
+  core:      'Core Plan',
+  pro:       'Pro Plan',
+  prop:      'Prop Trader',
+  cancelled: 'Plan Expired',
+};
+
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [plan, setPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchPlan() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('plan').eq('id', user.id).single();
+      if (data?.plan) setPlan(data.plan);
+    }
+    fetchPlan();
+  }, []);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -56,6 +76,15 @@ export default function DashboardSidebar() {
       </nav>
 
       <div className="p-3 border-t border-border space-y-0.5">
+        {plan && (
+          <div className="px-3 py-2 mb-1">
+            <span className={`font-mono text-[10px] tracking-widest uppercase ${
+              plan === 'cancelled' ? 'text-signal-red' : plan === 'trial' ? 'text-text-dim' : 'text-accent'
+            }`}>
+              {PLAN_LABELS[plan] ?? plan}
+            </span>
+          </div>
+        )}
         <Link
           href="/dashboard/settings"
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-text hover:bg-bg-elevated transition-colors"

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { CreditCard, User, Database, AlertTriangle, Palette } from 'lucide-react';
+import { CreditCard, User, Database, AlertTriangle, Palette, Star, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -11,6 +11,8 @@ export default async function SettingsPage() {
     .select('*')
     .eq('id', user!.id)
     .single();
+
+  const plan = profile?.plan || 'trial';
 
   const planLabels: Record<string, string> = {
     trial:     'Free Trial',
@@ -31,6 +33,10 @@ export default async function SettingsPage() {
         <Row label="Name"         value={profile?.full_name || '—'} />
         <Row label="Email"        value={profile?.email || user?.email || '—'} />
         <Row label="Member since" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '—'} />
+        <div className="flex justify-between items-center py-3 border-b border-border/50 last:border-0">
+          <span className="mono-label">Plan</span>
+          <SettingsPlanBadge plan={plan} />
+        </div>
       </Section>
 
       <Section icon={CreditCard} label="Plan & Billing">
@@ -103,4 +109,46 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-text-muted text-sm">{value}</span>
     </div>
   );
+}
+
+function SettingsPlanBadge({ plan }: { plan: string }) {
+  if (plan === 'trial') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-border bg-bg-elevated text-text-dim">
+        FREE TRIAL
+      </span>
+    );
+  }
+  if (plan === 'core') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-accent/40 text-accent">
+        CORE PLAN
+      </span>
+    );
+  }
+  if (plan === 'pro') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full bg-accent text-bg font-bold">
+        <Star size={10} fill="currentColor" strokeWidth={0} />
+        PRO PLAN
+      </span>
+    );
+  }
+  if (plan === 'prop') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full text-bg font-bold"
+        style={{ background: 'linear-gradient(135deg, #00D9FF 0%, #0099CC 100%)' }}>
+        <Trophy size={10} fill="currentColor" strokeWidth={0} />
+        PROP TRADER
+      </span>
+    );
+  }
+  if (plan === 'cancelled') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-signal-red/40 text-signal-red">
+        PLAN EXPIRED
+      </span>
+    );
+  }
+  return null;
 }

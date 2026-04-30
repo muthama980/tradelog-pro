@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { TrendingUp, TrendingDown, Plus, BookOpen } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import DailyQuote from '@/components/DailyQuote';
 import OverviewChart from '@/components/dashboard/OverviewChart';
@@ -36,6 +36,8 @@ export default async function DashboardPage() {
 
   const firstName = (profile?.full_name || user!.email || 'Trader').split(' ')[0];
 
+  const plan = profile?.plan || 'trial';
+
   return (
     <div className="p-8 md:p-10 max-w-7xl">
       {/* Header */}
@@ -44,17 +46,22 @@ export default async function DashboardPage() {
           <p className="mono-label mb-2">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
-          <h1 className="text-3xl font-bold text-text tracking-tight">
-            Welcome back, <span className="text-accent">{firstName}</span>.
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold text-text tracking-tight">
+              Welcome back, <span className="text-accent">{firstName}</span>.
+            </h1>
+            <PlanBadge plan={plan} trialDays={trialDays} />
+          </div>
+          {plan === 'trial' && (
+            <Link
+              href="/pricing"
+              className="mt-2 inline-block font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
+            >
+              Upgrade now →
+            </Link>
+          )}
         </div>
         <div className="flex gap-3">
-          {profile?.plan === 'trial' && (
-            <div className="border border-accent/30 px-4 py-2 rounded-lg bg-accent/5">
-              <div className="mono-label mb-0.5">Trial</div>
-              <div className="text-sm text-text font-medium">{trialDays} day{trialDays !== 1 ? 's' : ''} remaining</div>
-            </div>
-          )}
           <DownloadReportButton trades={closed} />
           <Link href="/dashboard/journal" className="btn-primary">
             <Plus size={15} className="mr-2" />
@@ -164,4 +171,46 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
+}
+
+function PlanBadge({ plan, trialDays }: { plan: string; trialDays: number }) {
+  if (plan === 'trial') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-border bg-bg-elevated text-text-dim">
+        FREE TRIAL · {trialDays}d left
+      </span>
+    );
+  }
+  if (plan === 'core') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-accent/40 text-accent">
+        CORE PLAN
+      </span>
+    );
+  }
+  if (plan === 'pro') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full bg-accent text-bg font-bold">
+        <Star size={10} fill="currentColor" strokeWidth={0} />
+        PRO PLAN
+      </span>
+    );
+  }
+  if (plan === 'prop') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full text-bg font-bold"
+        style={{ background: 'linear-gradient(135deg, #00D9FF 0%, #0099CC 100%)' }}>
+        <Trophy size={10} fill="currentColor" strokeWidth={0} />
+        PROP TRADER
+      </span>
+    );
+  }
+  if (plan === 'cancelled') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-signal-red/40 text-signal-red">
+        PLAN EXPIRED
+      </span>
+    );
+  }
+  return null;
 }

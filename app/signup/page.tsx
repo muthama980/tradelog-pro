@@ -33,9 +33,11 @@ function SignupForm() {
     setLoading(false);
     if (error) { setError(error.message); return; }
     setDone(true);
-    setTimeout(() => router.push('/dashboard'), 1500);
+    // Do NOT auto-redirect — user must confirm email first
   }
 
+  // Google OAuth — requires: Supabase Dashboard → Authentication → Providers → Google (enable + add Client ID/Secret)
+  // and Google Cloud Console → OAuth 2.0 credentials with this origin + /auth/callback as authorised redirect URI.
   async function signupWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -50,8 +52,17 @@ function SignupForm() {
     return (
       <div className="text-center py-12">
         <CheckCircle2 className="text-accent mx-auto mb-5" size={40} strokeWidth={1.5} />
-        <h2 className="font-bold text-2xl text-text mb-3">Welcome aboard.</h2>
-        <p className="text-text-muted">Check your email to confirm — then your trial begins.</p>
+        <h2 className="font-bold text-2xl text-text mb-3">Check your email.</h2>
+        <p className="text-text-muted leading-relaxed">
+          Check your email to confirm your account.
+          Once confirmed, you can sign in.
+        </p>
+        <Link
+          href="/login"
+          className="inline-block mt-6 font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
+        >
+          Back to sign in →
+        </Link>
       </div>
     );
   }
