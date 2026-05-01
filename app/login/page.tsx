@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowRight, Mail, Lock } from 'lucide-react';
+
+const CHECKBOX_KEY = 'tlp_checkbox_pref';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +15,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(CHECKBOX_KEY);
+    if (saved !== null) setRememberMe(saved === 'true');
+  }, []);
+
+  function handleRememberChange(checked: boolean) {
+    setRememberMe(checked);
+    localStorage.setItem(CHECKBOX_KEY, String(checked));
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +41,13 @@ export default function LoginPage() {
       }
       return;
     }
+    if (rememberMe) {
+      localStorage.setItem('tlp_remember', 'true');
+      sessionStorage.removeItem('tlp_session_active');
+    } else {
+      localStorage.removeItem('tlp_remember');
+      sessionStorage.setItem('tlp_session_active', '1');
+    }
     router.push('/dashboard');
     router.refresh();
   }
@@ -35,6 +55,7 @@ export default function LoginPage() {
   // Google OAuth — requires: Supabase Dashboard → Authentication → Providers → Google (enable + add Client ID/Secret)
   // and Google Cloud Console → OAuth 2.0 credentials with this origin + /auth/callback as authorised redirect URI.
   async function signInWithGoogle() {
+    localStorage.setItem('tlp_remember', 'true');
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -114,6 +135,19 @@ export default function LoginPage() {
                   placeholder="••••••••"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                id="remember-me"
+                checked={rememberMe}
+                onChange={(e) => handleRememberChange(e.target.checked)}
+                className="w-4 h-4 rounded cursor-pointer accent-[#00D9FF]"
+              />
+              <label htmlFor="remember-me" className="text-sm text-text-muted cursor-pointer select-none">
+                Keep me signed in
+              </label>
             </div>
 
             {error && (

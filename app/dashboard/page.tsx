@@ -3,7 +3,6 @@ import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy } from 'lucide-r
 import Link from 'next/link';
 import DailyQuote from '@/components/DailyQuote';
 import OverviewChart from '@/components/dashboard/OverviewChart';
-import DownloadReportButton from '@/components/dashboard/DownloadReportButton';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -67,13 +66,10 @@ export default async function DashboardPage() {
             </Link>
           )}
         </div>
-        <div className="flex gap-3">
-          <DownloadReportButton trades={closed} />
-          <Link href="/dashboard/journal" className="btn-primary">
-            <Plus size={15} className="mr-2" />
-            Log Trade
-          </Link>
-        </div>
+        <Link href="/dashboard/journal" className="btn-primary">
+          <Plus size={15} className="mr-2" />
+          Log Trade
+        </Link>
       </div>
 
       {/* KPIs */}
