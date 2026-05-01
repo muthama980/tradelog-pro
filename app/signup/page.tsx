@@ -43,7 +43,10 @@ function SignupForm() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: { plan_intent: plan },
+        queryParams: {
+          prompt: 'select_account',
+          plan_intent: plan,
+        },
       },
     });
   }
