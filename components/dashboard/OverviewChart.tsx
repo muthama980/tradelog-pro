@@ -10,14 +10,15 @@ export default function OverviewChart({ trades }: { trades: any[] }) {
 
   const isLight = theme === 'light';
   const axisStroke = isLight ? '#D4D4D8' : '#27272A';
-  const tickColor  = isLight ? '#71717A' : '#71717A';
+  const tickColor  = isLight ? '#52525B' : '#71717A';
+  const tooltipText = isLight ? '#09090B' : '#FAFAFA';
   const tooltipStyle = {
-    background: isLight ? '#FFFFFF' : '#111113',
-    border: `1px solid ${isLight ? '#E4E4E7' : 'rgba(0, 217, 255, 0.2)'}`,
+    background: isLight ? '#FFFFFF' : '#0A0A0B',
+    border: `1px solid ${isLight ? '#E4E4E7' : '#00D9FF'}`,
     borderRadius: 8,
     fontFamily: 'var(--font-geist-mono)',
     fontSize: 12,
-    color: isLight ? '#09090B' : '#FAFAFA',
+    color: tooltipText,
   };
 
   if (!trades || trades.length === 0) {
@@ -52,7 +53,7 @@ export default function OverviewChart({ trades }: { trades: any[] }) {
         </defs>
         <XAxis dataKey="date" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
         <YAxis stroke={axisStroke} tickLine={false} axisLine={false} fontSize={11} tick={{ fill: tickColor }} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: CHART_CYAN }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: isLight ? '#52525B' : CHART_CYAN }} itemStyle={{ color: tooltipText }} />
         <Area type="monotone" dataKey="pnl" stroke={CHART_CYAN} strokeWidth={2} fill="url(#cyanGrad)" />
       </AreaChart>
     </ResponsiveContainer>

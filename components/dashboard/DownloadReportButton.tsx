@@ -175,15 +175,18 @@ export default function DownloadReportButton({ trades }: { trades: any[] }) {
         pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [A4_W, contentH] });
         pdf.addImage(imgData, 'PNG', 0, 0, A4_W, contentH);
       } else {
-        // Paginate across A4 pages only as needed
+        // Paginate: full A4 pages, last page trimmed to actual remaining content
         pdf = new jsPDF('p', 'mm', 'a4');
         let yOffset = 0;
         let page    = 0;
 
         while (yOffset < contentH) {
-          if (page > 0) pdf.addPage();
+          const remaining = contentH - yOffset;
+          const pageH     = Math.min(A4_H, remaining);
+
+          if (page > 0) pdf.addPage([A4_W, pageH]);
           pdf.addImage(imgData, 'PNG', 0, -yOffset, A4_W, contentH);
-          yOffset += A4_H;
+          yOffset += pageH;
           page++;
         }
       }
