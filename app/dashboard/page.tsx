@@ -34,7 +34,13 @@ export default async function DashboardPage() {
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at).getTime() - Date.now()) / 86400000))
     : 0;
 
-  const firstName = (profile?.full_name || user!.email || 'Trader').split(' ')[0];
+  const displayName =
+    profile?.full_name ||
+    user!.user_metadata?.full_name ||
+    user!.user_metadata?.name ||
+    user!.email ||
+    'Trader';
+  const firstName = displayName.split(' ')[0];
 
   const plan = profile?.plan || 'trial';
 
