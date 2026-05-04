@@ -129,48 +129,46 @@ export default async function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase bg-bg-elevated">
-                  <th className="text-left p-4">Symbol</th>
-                  <th className="text-left p-4 hidden md:table-cell">Strategy</th>
-                  <th className="text-left p-4 hidden lg:table-cell">Direction</th>
-                  <th className="text-left p-4 hidden lg:table-cell">Date</th>
-                  <th className="text-right p-4">P&L</th>
-                  <th className="text-right p-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.slice(0, 8).map((t: any) => (
-                  <tr key={t.id} className="border-t border-border/50 hover:bg-bg-elevated/50 transition-colors">
-                    <td className="p-4 font-mono text-sm text-text">{t.symbol}</td>
-                    <td className="p-4 hidden md:table-cell">
-                      {t.strategy && (
-                        <span className="font-mono text-[10px] uppercase tracking-widest text-text-dim px-2 py-0.5 border border-border rounded">
-                          {t.strategy}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
-                    <td className="p-4 hidden lg:table-cell font-mono text-xs text-text-dim">
-                      {new Date(t.opened_at).toLocaleDateString()}
-                    </td>
-                    <td className={`p-4 text-right font-mono text-sm tabular font-bold whitespace-nowrap ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
-                      {t.pnl != null ? `${Number(t.pnl) >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}` : '—'}
-                    </td>
-                    <td className="p-4 text-right whitespace-nowrap">
-                      <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-0.5 border rounded ${
-                        t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
-                      }`}>
-                        {t.status}
+          <table className="w-full">
+            <thead>
+              <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase bg-bg-elevated">
+                <th className="text-left p-3">Symbol</th>
+                <th className="text-left p-3 hidden md:table-cell">Strategy</th>
+                <th className="text-left p-3 hidden lg:table-cell">Direction</th>
+                <th className="text-left p-3 hidden lg:table-cell">Date</th>
+                <th className="text-right p-3">P&L</th>
+                <th className="text-right p-3 w-px">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.slice(0, 8).map((t: any) => (
+                <tr key={t.id} className="border-t border-border/50 hover:bg-bg-elevated/50 transition-colors">
+                  <td className="p-3 font-mono text-sm text-text">{t.symbol}</td>
+                  <td className="p-3 hidden md:table-cell">
+                    {t.strategy && (
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-text-dim px-2 py-0.5 border border-border rounded">
+                        {t.strategy}
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    )}
+                  </td>
+                  <td className="p-3 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
+                  <td className="p-3 hidden lg:table-cell font-mono text-xs text-text-dim">
+                    {new Date(t.opened_at).toLocaleDateString()}
+                  </td>
+                  <td className={`p-3 text-right font-mono text-sm tabular font-bold whitespace-nowrap ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
+                    {t.pnl != null ? `${Number(t.pnl) >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}` : '—'}
+                  </td>
+                  <td className="p-3 text-right whitespace-nowrap w-px">
+                    <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-0.5 border rounded ${
+                      t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
+                    }`}>
+                      {t.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
