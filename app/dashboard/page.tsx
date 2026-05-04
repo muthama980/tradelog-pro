@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy } from 'lucide-r
 import Link from 'next/link';
 import DailyQuote from '@/components/DailyQuote';
 import OverviewChart from '@/components/dashboard/OverviewChart';
+import RiskStatus from '@/components/dashboard/RiskStatus';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -18,8 +19,7 @@ export default async function DashboardPage() {
     .from('trades')
     .select('*')
     .eq('user_id', user!.id)
-    .order('opened_at', { ascending: false })
-    .limit(50);
+    .order('opened_at', { ascending: false });
 
   const closed   = (trades || []).filter((t: any) => t.status === 'closed');
   const wins     = closed.filter((t: any) => Number(t.pnl) > 0);
@@ -72,6 +72,9 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      {/* Daily risk status */}
+      <RiskStatus />
+
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         {[
@@ -85,7 +88,7 @@ export default async function DashboardPage() {
             <div className="font-mono text-2xl font-bold text-text tabular">{k.val}</div>
             <div className={`mt-2 font-mono text-xs flex items-center gap-1 ${k.up ? 'text-signal-green' : 'text-signal-red'}`}>
               {k.up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-              {closed.length === 0 ? 'No trades yet' : 'Last 50 trades'}
+              {closed.length === 0 ? 'No trades yet' : `${closed.length} closed trades`}
             </div>
           </div>
         ))}
@@ -99,7 +102,7 @@ export default async function DashboardPage() {
               <h3 className="font-bold text-base text-text">P&L Curve</h3>
               <p className="mono-label mt-0.5">Cumulative profit & loss</p>
             </div>
-            <span className="font-mono text-[10px] tracking-widest text-accent uppercase">30d</span>
+            <span className="font-mono text-[10px] tracking-widest text-accent uppercase">All time</span>
           </div>
           <OverviewChart trades={closed} />
         </div>

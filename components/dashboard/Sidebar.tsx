@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Settings, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Settings, LogOut, X, Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
+import { canAccess } from '@/lib/planGating';
 
 interface Props {
   isOpen: boolean;
@@ -68,8 +69,9 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
 
       <nav className="flex-1 px-3 py-5 space-y-0.5">
         {NAV.map((item) => {
-          const Icon = item.icon;
+          const Icon   = item.icon;
           const active = pathname === item.href;
+          const locked = item.href === '/coach' && plan !== null && !canAccess(plan, 'ai_coach');
           return (
             <Link
               key={item.href}
@@ -82,7 +84,8 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
               }`}
             >
               <Icon size={15} strokeWidth={1.7} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {locked && <Lock size={11} className="text-text-dim shrink-0" />}
             </Link>
           );
         })}
