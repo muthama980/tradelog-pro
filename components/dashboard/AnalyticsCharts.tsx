@@ -1,45 +1,16 @@
 'use client';
 
-import Link from 'next/link';
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Lock } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
-import { canAccess } from '@/lib/planGating';
 
 const CHART_CYAN  = '#00D9FF';
 const CHART_GREEN = '#22C55E';
 const CHART_RED   = '#EF4444';
 
-function GateLock({ planLabel }: { planLabel: string }) {
-  return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-bg/75 backdrop-blur-[3px]">
-      <div className="flex flex-col items-center gap-3 text-center px-6">
-        <div className="w-10 h-10 rounded-full border border-border bg-bg-elevated flex items-center justify-center">
-          <Lock size={16} className="text-text-muted" />
-        </div>
-        <p className="font-bold text-sm text-text">Available on {planLabel}</p>
-        <p className="text-xs text-text-muted max-w-[180px]">Upgrade to unlock advanced analytics and see what's driving your edge.</p>
-        <Link href="/pricing" className="btn-primary text-xs py-1.5 px-4 mt-1">Upgrade →</Link>
-      </div>
-    </div>
-  );
-}
-
-function GatedCard({ children, locked, planLabel }: { children: React.ReactNode; locked: boolean; planLabel: string }) {
-  return (
-    <div className="relative">
-      {locked && <GateLock planLabel={planLabel} />}
-      <div className={locked ? 'blur-[2px] pointer-events-none select-none' : ''}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-export default function AnalyticsCharts({ trades, plan }: { trades: any[]; plan: string }) {
+export default function AnalyticsCharts({ trades }: { trades: any[] }) {
   const { theme } = useTheme();
 
   const isLight       = theme === 'light';
@@ -60,9 +31,6 @@ export default function AnalyticsCharts({ trades, plan }: { trades: any[]; plan:
   };
   const labelStyle = { color: tooltipLabel };
   const itemStyle  = { color: tooltipText };
-
-  const advancedLocked  = !canAccess(plan, 'advanced_analytics');
-  const mistakeLocked   = !canAccess(plan, 'mistake_tracking_summary');
 
   if (!trades || trades.length === 0) {
     return (
@@ -141,7 +109,7 @@ export default function AnalyticsCharts({ trades, plan }: { trades: any[]; plan:
   return (
     <div className="space-y-5">
 
-      {/* ── Equity curve (all plans) ──────────────────────────────────── */}
+      {/* ── Equity curve ──────────────────────────────────────────────── */}
       <div className="card rounded-xl p-6">
         <h3 className="font-bold text-base text-text mb-1">Equity Curve</h3>
         <p className="mono-label mb-5">Cumulative P&L across all closed trades</p>
@@ -161,26 +129,24 @@ export default function AnalyticsCharts({ trades, plan }: { trades: any[]; plan:
         </ResponsiveContainer>
       </div>
 
-      {/* ── Strategy + Win/Loss (advanced gated) ─────────────────────── */}
+      {/* ── Strategy + Win/Loss ───────────────────────────────────────── */}
       <div className="grid lg:grid-cols-2 gap-5">
-        <GatedCard locked={advancedLocked} planLabel="Pro">
-          <div className="card rounded-xl p-6">
-            <h3 className="font-bold text-base text-text mb-1">P&L by Strategy</h3>
-            <p className="mono-label mb-5">Which playbook is paying you?</p>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={stratData}>
-                <XAxis dataKey="strategy" stroke={axisStroke} tickLine={false} fontSize={10} tick={{ fill: tickColor }} />
-                <YAxis stroke={axisStroke} tickLine={false} axisLine={false} fontSize={11} tick={{ fill: tickColor }} />
-                <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
-                <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
-                  {stratData.map((d, i) => (
-                    <Cell key={i} fill={d.pnl >= 0 ? CHART_GREEN : CHART_RED} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </GatedCard>
+        <div className="card rounded-xl p-6">
+          <h3 className="font-bold text-base text-text mb-1">P&L by Strategy</h3>
+          <p className="mono-label mb-5">Which playbook is paying you?</p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={stratData}>
+              <XAxis dataKey="strategy" stroke={axisStroke} tickLine={false} fontSize={10} tick={{ fill: tickColor }} />
+              <YAxis stroke={axisStroke} tickLine={false} axisLine={false} fontSize={11} tick={{ fill: tickColor }} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
+              <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
+                {stratData.map((d, i) => (
+                  <Cell key={i} fill={d.pnl >= 0 ? CHART_GREEN : CHART_RED} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
         <div className="card rounded-xl p-6">
           <h3 className="font-bold text-base text-text mb-1">Win / Loss Split</h3>
@@ -197,81 +163,74 @@ export default function AnalyticsCharts({ trades, plan }: { trades: any[]; plan:
         </div>
       </div>
 
-      {/* ── P&L by emotion (advanced gated) ──────────────────────────── */}
-      <GatedCard locked={advancedLocked} planLabel="Pro">
-        <div className="card rounded-xl p-6">
-          <h3 className="font-bold text-base text-text mb-1">P&L by Emotion</h3>
-          <p className="mono-label mb-5">When are you dangerous?</p>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={emoData} layout="vertical">
-              <XAxis type="number" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
-              <YAxis type="category" dataKey="emotion" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={11} width={90} tick={{ fill: tickColor }} />
-              <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
-              <Bar dataKey="pnl" radius={[0, 4, 4, 0]}>
-                {emoData.map((d, i) => (
-                  <Cell key={i} fill={d.pnl >= 0 ? CHART_CYAN : CHART_RED} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </GatedCard>
-
-      {/* ── Mistake tracking summary (pro+ gated) ────────────────────── */}
-      <GatedCard locked={mistakeLocked} planLabel="Pro">
-        <div className="card rounded-xl p-6">
-          <h3 className="font-bold text-base text-text mb-1">Mistake Cost Analysis</h3>
-          <p className="mono-label mb-5">What's your most expensive habit?</p>
-
-          {!hasMistakeData ? (
-            <p className="text-text-muted text-sm py-6 text-center">
-              No mistake data yet. Tag mistakes on your trades to see the cost breakdown.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {/* Clean trades */}
-              {cleanCount > 0 && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-signal-green/8 border border-signal-green/20">
-                  <div>
-                    <span className="font-mono text-xs text-signal-green uppercase tracking-wider">Clean trades</span>
-                    <span className="text-text-dim text-xs ml-2">({cleanCount} trades, no mistakes)</span>
-                  </div>
-                  <span className="font-mono text-sm font-bold text-signal-green tabular">
-                    +${cleanPnl.toFixed(2)}
-                  </span>
-                </div>
-              )}
-
-              {/* Mistake rows */}
-              {mistakeData.map((d) => (
-                <div key={d.mistake} className="flex items-center justify-between p-3 rounded-lg bg-signal-red/8 border border-signal-red/20">
-                  <div>
-                    <span className="font-mono text-xs text-signal-red uppercase tracking-wider">{d.mistake}</span>
-                    <span className="text-text-dim text-xs ml-2">({d.count} {d.count === 1 ? 'trade' : 'trades'})</span>
-                  </div>
-                  <span className="font-mono text-sm font-bold text-signal-red tabular">
-                    ${d.pnl.toFixed(2)}
-                  </span>
-                </div>
+      {/* ── P&L by emotion ───────────────────────────────────────────── */}
+      <div className="card rounded-xl p-6">
+        <h3 className="font-bold text-base text-text mb-1">P&L by Emotion</h3>
+        <p className="mono-label mb-5">When are you dangerous?</p>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={emoData} layout="vertical">
+            <XAxis type="number" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
+            <YAxis type="category" dataKey="emotion" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={11} width={90} tick={{ fill: tickColor }} />
+            <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
+            <Bar dataKey="pnl" radius={[0, 4, 4, 0]}>
+              {emoData.map((d, i) => (
+                <Cell key={i} fill={d.pnl >= 0 ? CHART_CYAN : CHART_RED} />
               ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
-              {/* Bar chart */}
-              {mistakeData.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={mistakeData} layout="vertical">
-                      <XAxis type="number" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
-                      <YAxis type="category" dataKey="mistake" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={10} width={120} tick={{ fill: tickColor }} />
-                      <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
-                      <Bar dataKey="pnl" radius={[0, 4, 4, 0]} fill={CHART_RED} />
-                    </BarChart>
-                  </ResponsiveContainer>
+      {/* ── Mistake tracking summary ─────────────────────────────────── */}
+      <div className="card rounded-xl p-6">
+        <h3 className="font-bold text-base text-text mb-1">Mistake Cost Analysis</h3>
+        <p className="mono-label mb-5">What's your most expensive habit?</p>
+
+        {!hasMistakeData ? (
+          <p className="text-text-muted text-sm py-6 text-center">
+            No mistake data yet. Tag mistakes on your trades to see the cost breakdown.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {cleanCount > 0 && (
+              <div className="flex items-center justify-between p-3 rounded-lg bg-signal-green/8 border border-signal-green/20">
+                <div>
+                  <span className="font-mono text-xs text-signal-green uppercase tracking-wider">Clean trades</span>
+                  <span className="text-text-dim text-xs ml-2">({cleanCount} trades, no mistakes)</span>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </GatedCard>
+                <span className="font-mono text-sm font-bold text-signal-green tabular">
+                  +${cleanPnl.toFixed(2)}
+                </span>
+              </div>
+            )}
+
+            {mistakeData.map((d) => (
+              <div key={d.mistake} className="flex items-center justify-between p-3 rounded-lg bg-signal-red/8 border border-signal-red/20">
+                <div>
+                  <span className="font-mono text-xs text-signal-red uppercase tracking-wider">{d.mistake}</span>
+                  <span className="text-text-dim text-xs ml-2">({d.count} {d.count === 1 ? 'trade' : 'trades'})</span>
+                </div>
+                <span className="font-mono text-sm font-bold text-signal-red tabular">
+                  ${d.pnl.toFixed(2)}
+                </span>
+              </div>
+            ))}
+
+            {mistakeData.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={mistakeData} layout="vertical">
+                    <XAxis type="number" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
+                    <YAxis type="category" dataKey="mistake" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={10} width={120} tick={{ fill: tickColor }} />
+                    <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
+                    <Bar dataKey="pnl" radius={[0, 4, 4, 0]} fill={CHART_RED} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

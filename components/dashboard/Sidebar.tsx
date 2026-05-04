@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Settings, LogOut, X, Lock } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Settings, LogOut, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 import { canAccess } from '@/lib/planGating';
@@ -16,7 +16,7 @@ const NAV = [
   { href: '/dashboard',           label: 'Overview',  icon: LayoutDashboard },
   { href: '/dashboard/journal',   label: 'Journal',   icon: BookOpen },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/coach',               label: 'AI Coach',  icon: Brain },
+  { href: '/dashboard/coach',     label: 'AI Coach',  icon: Brain },
 ];
 
 const PLAN_LABELS: Record<string, string> = {
@@ -70,8 +70,9 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
       <nav className="flex-1 px-3 py-5 space-y-0.5">
         {NAV.map((item) => {
           const Icon   = item.icon;
-          const active = pathname === item.href;
-          const locked = item.href === '/coach' && plan !== null && !canAccess(plan, 'ai_coach');
+          const active = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isCoach = item.href === '/dashboard/coach';
+          const showProBadge = isCoach && plan !== null && !canAccess(plan, 'ai_coach');
           return (
             <Link
               key={item.href}
@@ -85,7 +86,11 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
             >
               <Icon size={15} strokeWidth={1.7} />
               <span className="flex-1">{item.label}</span>
-              {locked && <Lock size={11} className="text-text-dim shrink-0" />}
+              {showProBadge && (
+                <span className="font-mono text-[8px] tracking-widest uppercase px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0">
+                  PRO
+                </span>
+              )}
             </Link>
           );
         })}
