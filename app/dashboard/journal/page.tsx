@@ -233,54 +233,56 @@ export default function JournalPage() {
             </button>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase border-b border-border bg-bg-elevated">
-                <th className="text-left p-4">Symbol</th>
-                <th className="text-left p-4 hidden md:table-cell">Dir</th>
-                <th className="text-left p-4 hidden lg:table-cell">Strategy</th>
-                <th className="text-left p-4 hidden lg:table-cell">Emotion</th>
-                <th className="text-right p-4">P&L</th>
-                <th className="text-right p-4">Status</th>
-                <th className="p-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {trades.map((t) => (
-                <tr key={t.id} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
-                  <td className="p-4">
-                    <div className="font-mono text-sm text-text">{t.symbol}</div>
-                    <div className="font-mono text-[10px] text-text-dim uppercase tracking-wider">{t.market}</div>
-                  </td>
-                  <td className="p-4 hidden md:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
-                  <td className="p-4 hidden lg:table-cell">
-                    {t.strategy && <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border rounded text-text-dim">{t.strategy}</span>}
-                  </td>
-                  <td className="p-4 hidden lg:table-cell">
-                    {t.emotion && <span className="font-mono text-[10px] uppercase tracking-wider text-accent">{t.emotion}</span>}
-                  </td>
-                  <td className={`p-4 text-right font-mono text-sm tabular font-bold ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
-                    {t.pnl != null ? `${Number(t.pnl) >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}` : '—'}
-                  </td>
-                  <td className="p-4 text-right">
-                    <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded ${
-                      t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
-                    }`}>{t.status}</span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => startEdit(t)} className="text-text-dim hover:text-accent text-xs transition flex items-center gap-1">
-                        <Pencil size={11} /> Edit
-                      </button>
-                      <button onClick={() => remove(t.id)} className="text-text-dim hover:text-signal-red text-xs transition">
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase border-b border-border bg-bg-elevated">
+                  <th className="text-left p-4">Symbol</th>
+                  <th className="text-left p-4 hidden lg:table-cell">Dir</th>
+                  <th className="text-left p-4 hidden md:table-cell">Strategy</th>
+                  <th className="text-left p-4 hidden md:table-cell">Emotion</th>
+                  <th className="text-right p-4">P&L</th>
+                  <th className="text-right p-4">Status</th>
+                  <th className="p-4"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {trades.map((t) => (
+                  <tr key={t.id} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
+                    <td className="p-4">
+                      <div className="font-mono text-sm text-text">{t.symbol}</div>
+                      <div className="font-mono text-[10px] text-text-dim uppercase tracking-wider">{t.market}</div>
+                    </td>
+                    <td className="p-4 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
+                    <td className="p-4 hidden md:table-cell">
+                      {t.strategy && <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border rounded text-text-dim">{t.strategy}</span>}
+                    </td>
+                    <td className="p-4 hidden md:table-cell">
+                      {t.emotion && <span className="font-mono text-[10px] uppercase tracking-wider text-accent">{t.emotion}</span>}
+                    </td>
+                    <td className={`p-4 text-right font-mono text-sm tabular font-bold whitespace-nowrap ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
+                      {t.pnl != null ? `${Number(t.pnl) >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}` : '—'}
+                    </td>
+                    <td className="p-4 text-right whitespace-nowrap">
+                      <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded ${
+                        t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
+                      }`}>{t.status}</span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <button onClick={() => startEdit(t)} className="text-text-dim hover:text-accent text-xs transition flex items-center gap-1">
+                          <Pencil size={11} /> Edit
+                        </button>
+                        <button onClick={() => remove(t.id)} className="text-text-dim hover:text-signal-red text-xs transition">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
