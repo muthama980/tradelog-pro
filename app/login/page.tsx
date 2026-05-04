@@ -99,6 +99,9 @@ export default function LoginPage() {
             </svg>
             Continue with Google
           </button>
+          <p className="text-xs text-text-muted text-center -mt-3 mb-5">
+            If Google sign-in fails, open this page in Chrome or your default browser.
+          </p>
 
           <div className="flex items-center gap-3 my-5">
             <div className="h-px flex-1 bg-border" />
