@@ -11,34 +11,65 @@ interface Props {
   planPrice: string;
 }
 
-const METHODS = [
+// Simple PayPal "double-P" logo in brand colours
+function PayPalLogo() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M15.5 4H9.5L7 19h3l.6-4h2.4c3.5 0 6-2 6.5-5.5C19.9 6 18 4 15.5 4Z"
+        fill="#003087"
+      />
+      <path
+        d="M13.5 6.5H7.5L5 21.5h3l.6-4h2.4c3.5 0 6-2 6.5-5.5.2-1.4 0-2.6-.6-3.5-.8.3-1.8.5-2.9.5-.2 0-.3 0-.5 0Z"
+        fill="#0070BA"
+      />
+    </svg>
+  );
+}
+
+type Method = {
+  id: string;
+  label: string;
+  subtitle: string;
+  renderIcon: () => React.ReactNode;
+  channels: string[];
+};
+
+const METHODS: Method[] = [
   {
     id: 'card',
     label: 'Card',
     subtitle: 'Credit or debit card',
-    Icon: CreditCard,
-    channels: ['card'] as string[],
+    renderIcon: () => <CreditCard size={22} className="text-accent" strokeWidth={1.7} />,
+    channels: ['card'],
   },
   {
     id: 'mpesa',
     label: 'M-Pesa',
     subtitle: 'Pay via M-Pesa mobile money',
-    Icon: Smartphone,
-    channels: ['mobile_money'] as string[],
+    renderIcon: () => <Smartphone size={22} className="text-accent" strokeWidth={1.7} />,
+    channels: ['mobile_money'],
   },
   {
     id: 'airtel',
     label: 'Airtel Money',
     subtitle: 'Pay via Airtel Money',
-    Icon: Smartphone,
-    channels: ['mobile_money'] as string[],
+    renderIcon: () => <Smartphone size={22} className="text-accent" strokeWidth={1.7} />,
+    channels: ['mobile_money'],
+  },
+  {
+    id: 'paypal',
+    label: 'PayPal',
+    subtitle: 'Pay with PayPal balance or linked card',
+    renderIcon: () => <PayPalLogo />,
+    channels: [],
   },
   {
     id: 'crypto',
     label: 'Crypto',
     subtitle: 'BTC, ETH, USDT, and 200+ more',
-    Icon: Bitcoin,
-    channels: [] as string[],
+    renderIcon: () => <Bitcoin size={22} className="text-accent" strokeWidth={1.7} />,
+    channels: [],
   },
 ];
 
@@ -67,7 +98,7 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
 
   if (!isOpen) return null;
 
-  async function handleSelect(method: typeof METHODS[0]) {
+  async function handleSelect(method: Method) {
     setLoading(method.id);
     setError(null);
 
@@ -77,6 +108,9 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
 
       if (method.id === 'crypto') {
         endpoint = '/api/checkout-crypto';
+        body = { plan: planKey };
+      } else if (method.id === 'paypal') {
+        endpoint = '/api/checkout-paypal';
         body = { plan: planKey };
       } else {
         endpoint = '/api/checkout-paystack';
@@ -134,7 +168,6 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
 
         <div className="space-y-3">
           {METHODS.map((m) => {
-            const { Icon } = m;
             const isLoading = loading === m.id;
             return (
               <button
@@ -147,8 +180,8 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
                   ${isLoading ? 'border-accent/40' : ''}
                 `}
               >
-                <div className="flex-shrink-0 p-2.5 rounded-lg bg-bg-elevated">
-                  <Icon size={22} className="text-accent" strokeWidth={1.7} />
+                <div className="flex-shrink-0 p-2.5 rounded-lg bg-bg-elevated flex items-center justify-center">
+                  {m.renderIcon()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-text text-sm">{m.label}</div>
@@ -163,7 +196,7 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
         </div>
 
         <p className="mt-6 mono-label text-center tracking-wider">
-          Secured by Paystack & NOWPayments · 4-day free trial · Cancel anytime
+          Secured by Paystack, PayPal & NOWPayments · Cancel anytime
         </p>
       </div>
     </div>
