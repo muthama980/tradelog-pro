@@ -1,10 +1,14 @@
-import Link from 'next/link';
-import { Check } from 'lucide-react';
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Check, Loader2 } from 'lucide-react';
 
 const TIERS = [
   {
     name: 'Core',
-    price: 19,
+    price: 'KES 1,900',
+    planKey: 'core',
     badge: null,
     description: 'For the disciplined trader.',
     features: [
@@ -16,12 +20,13 @@ const TIERS = [
       '4-day free trial — no card required',
     ],
     cta: 'Begin trial',
-    href: '/signup?plan=core',
+    signupHref: '/signup?plan=core',
     highlight: false,
   },
   {
     name: 'Pro',
-    price: 25,
+    price: 'KES 2,500',
+    planKey: 'pro',
     badge: 'RECOMMENDED',
     description: 'For the trader who wants an edge.',
     features: [
@@ -33,12 +38,13 @@ const TIERS = [
       'Priority email support',
     ],
     cta: 'Begin trial',
-    href: '/signup?plan=pro',
+    signupHref: '/signup?plan=pro',
     highlight: true,
   },
   {
     name: 'Prop Trader',
-    price: 30,
+    price: 'KES 3,000',
+    planKey: 'prop',
     badge: 'FUNDED TRADERS',
     description: 'For the trader chasing capital.',
     features: [
@@ -50,12 +56,44 @@ const TIERS = [
       'Direct line to founder',
     ],
     cta: 'Begin trial',
-    href: '/signup?plan=prop',
+    signupHref: '/signup?plan=prop',
     highlight: false,
   },
 ];
 
 export default function Pricing({ standalone = false }: { standalone?: boolean }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubscribe(planKey: string, signupHref: string) {
+    setLoading(planKey);
+    setError(null);
+    try {
+      const res = await fetch('/api/checkout-paystack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planKey }),
+      });
+
+      if (res.status === 401) {
+        router.push(signupHref);
+        return;
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error || 'Checkout failed. Please try again.');
+        setLoading(null);
+      }
+    } catch {
+      setError('Something went wrong. Please try again.');
+      setLoading(null);
+    }
+  }
+
   return (
     <section className={`relative ${standalone ? 'pt-28' : 'py-24'} pb-24 px-6 lg:px-10 bg-bg`} id="pricing">
       <div className="max-w-7xl mx-auto">
@@ -72,8 +110,14 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
           </p>
         </div>
 
+        {error && (
+          <div className="mb-6 text-sm text-signal-red border border-signal-red/30 bg-signal-red/5 p-3 rounded-lg max-w-md">
+            {error}
+          </div>
+        )}
+
         <div className="grid md:grid-cols-3 gap-4">
-          {TIERS.map((t, i) => (
+          {TIERS.map((t) => (
             <div
               key={t.name}
               className={`relative flex flex-col rounded-xl border p-7 transition-all ${
@@ -98,7 +142,7 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
               </div>
 
               <div className="mb-6">
-                <span className="font-mono text-5xl font-bold text-text tabular">${t.price}</span>
+                <span className="font-mono text-4xl font-bold text-text tabular">{t.price}</span>
                 <span className="text-text-dim text-sm ml-1.5">/month</span>
               </div>
 
@@ -113,19 +157,24 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
                 ))}
               </ul>
 
-              <Link
-                href={t.href}
-                className={t.highlight ? 'btn-primary w-full justify-center' : 'btn-secondary w-full justify-center'}
+              <button
+                onClick={() => handleSubscribe(t.planKey, t.signupHref)}
+                disabled={loading === t.planKey}
+                className={`${t.highlight ? 'btn-primary' : 'btn-secondary'} w-full justify-center disabled:opacity-60 disabled:cursor-not-allowed`}
               >
-                {t.cta}
-              </Link>
+                {loading === t.planKey ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  t.cta
+                )}
+              </button>
             </div>
           ))}
         </div>
 
         <div className="mt-10 text-center">
           <p className="mono-label tracking-wider">
-            All plans · Powered by Lemon Squeezy · USD
+            All plans · Powered by Paystack · Pay with Card or M-Pesa · KES
           </p>
         </div>
       </div>
