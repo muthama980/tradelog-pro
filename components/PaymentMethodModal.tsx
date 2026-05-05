@@ -18,7 +18,6 @@ const METHODS = [
     subtitle: 'Credit or debit card',
     Icon: CreditCard,
     channels: ['card'] as string[],
-    comingSoon: false,
   },
   {
     id: 'mpesa',
@@ -26,7 +25,6 @@ const METHODS = [
     subtitle: 'Pay via M-Pesa mobile money',
     Icon: Smartphone,
     channels: ['mobile_money'] as string[],
-    comingSoon: false,
   },
   {
     id: 'airtel',
@@ -34,22 +32,19 @@ const METHODS = [
     subtitle: 'Pay via Airtel Money',
     Icon: Smartphone,
     channels: ['mobile_money'] as string[],
-    comingSoon: false,
   },
   {
     id: 'crypto',
     label: 'Crypto',
-    subtitle: 'Pay with BTC, ETH, USDC',
+    subtitle: 'BTC, ETH, USDT, and 200+ more',
     Icon: Bitcoin,
     channels: [] as string[],
-    comingSoon: true,
   },
 ];
 
 export default function PaymentMethodModal({ isOpen, onClose, planKey, planName, planPrice }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,20 +68,25 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
   if (!isOpen) return null;
 
   async function handleSelect(method: typeof METHODS[0]) {
-    if (method.comingSoon) {
-      setToast("Crypto payments coming soon. We're working on it!");
-      setTimeout(() => setToast(null), 4000);
-      return;
-    }
-
     setLoading(method.id);
     setError(null);
 
     try {
-      const res = await fetch('/api/checkout-paystack', {
+      let endpoint: string;
+      let body: Record<string, unknown>;
+
+      if (method.id === 'crypto') {
+        endpoint = '/api/checkout-crypto';
+        body = { plan: planKey };
+      } else {
+        endpoint = '/api/checkout-paystack';
+        body = { plan: planKey, channels: method.channels };
+      }
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planKey, channels: method.channels }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -103,89 +103,69 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
   }
 
   return (
-    <>
-      <div
-        ref={overlayRef}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-        onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      >
-        <div className="relative w-full max-w-md bg-bg-surface border border-border rounded-2xl p-7 shadow-2xl">
-          <button
-            onClick={onClose}
-            className="absolute top-5 right-5 text-text-dim hover:text-text transition"
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+    >
+      <div className="relative w-full max-w-md bg-bg-surface border border-border rounded-2xl p-7 shadow-2xl">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-text-dim hover:text-text transition"
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
 
-          <div className="mb-6 pr-8">
-            <p className="mono-label mb-2">How would you like to pay?</p>
-            <h2 className="text-xl font-bold text-text">{planName} Plan</h2>
-            <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="font-mono text-3xl font-bold text-accent">{planPrice}</span>
-              <span className="text-text-dim text-sm">/month</span>
-            </div>
+        <div className="mb-6 pr-8">
+          <p className="mono-label mb-2">How would you like to pay?</p>
+          <h2 className="text-xl font-bold text-text">{planName} Plan</h2>
+          <div className="flex items-baseline gap-1.5 mt-1">
+            <span className="font-mono text-3xl font-bold text-accent">{planPrice}</span>
+            <span className="text-text-dim text-sm">/month</span>
           </div>
-
-          {error && (
-            <div className="mb-4 text-sm text-signal-red border border-signal-red/30 bg-signal-red/5 p-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {METHODS.map((m) => {
-              const { Icon } = m;
-              const isLoading = loading === m.id;
-              const isDisabled = !!loading && !m.comingSoon;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => handleSelect(m)}
-                  disabled={isDisabled}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all
-                    ${m.comingSoon
-                      ? 'border-border bg-bg-elevated opacity-50 cursor-not-allowed'
-                      : 'border-border bg-bg hover:border-accent/60 hover:bg-bg-elevated active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed'
-                    }
-                    ${isLoading ? 'border-accent/40' : ''}
-                  `}
-                >
-                  <div className="flex-shrink-0 p-2.5 rounded-lg bg-bg-elevated">
-                    <Icon
-                      size={22}
-                      className={m.comingSoon ? 'text-text-dim' : 'text-accent'}
-                      strokeWidth={1.7}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-text text-sm">{m.label}</div>
-                    <div className="text-text-dim text-xs mt-0.5">{m.subtitle}</div>
-                  </div>
-                  {m.comingSoon && (
-                    <span className="flex-shrink-0 font-mono text-[9px] tracking-widest uppercase px-2 py-0.5 rounded-full border border-border text-text-dim bg-bg-elevated whitespace-nowrap">
-                      Coming soon
-                    </span>
-                  )}
-                  {isLoading && (
-                    <Loader2 size={16} className="animate-spin text-accent flex-shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <p className="mt-6 mono-label text-center tracking-wider">
-            Secured by Paystack · 4-day free trial · Cancel anytime
-          </p>
         </div>
+
+        {error && (
+          <div className="mb-4 text-sm text-signal-red border border-signal-red/30 bg-signal-red/5 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {METHODS.map((m) => {
+            const { Icon } = m;
+            const isLoading = loading === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => handleSelect(m)}
+                disabled={!!loading}
+                className={`w-full flex items-center gap-4 p-4 rounded-xl border text-left transition-all
+                  border-border bg-bg hover:border-accent/60 hover:bg-bg-elevated active:scale-[0.99]
+                  disabled:opacity-60 disabled:cursor-not-allowed
+                  ${isLoading ? 'border-accent/40' : ''}
+                `}
+              >
+                <div className="flex-shrink-0 p-2.5 rounded-lg bg-bg-elevated">
+                  <Icon size={22} className="text-accent" strokeWidth={1.7} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-text text-sm">{m.label}</div>
+                  <div className="text-text-dim text-xs mt-0.5">{m.subtitle}</div>
+                </div>
+                {isLoading && (
+                  <Loader2 size={16} className="animate-spin text-accent flex-shrink-0" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="mt-6 mono-label text-center tracking-wider">
+          Secured by Paystack & NOWPayments · 4-day free trial · Cancel anytime
+        </p>
       </div>
-
-      {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-bg-elevated border border-border text-text text-sm px-5 py-3 rounded-xl shadow-xl">
-          {toast}
-        </div>
-      )}
-    </>
+    </div>
   );
 }
