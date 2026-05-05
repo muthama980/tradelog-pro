@@ -4,6 +4,7 @@ import Link from 'next/link';
 import DailyQuote from '@/components/DailyQuote';
 import OverviewChart from '@/components/dashboard/OverviewChart';
 import RiskStatus from '@/components/dashboard/RiskStatus';
+import UpgradeButton from '@/components/dashboard/UpgradeButton';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -58,12 +59,10 @@ export default async function DashboardPage() {
             <PlanBadge plan={plan} trialDays={trialDays} />
           </div>
           {plan === 'trial' && (
-            <Link
-              href="/pricing"
-              className="mt-2 inline-block font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
-            >
-              Upgrade now →
-            </Link>
+            <UpgradeButton
+              className="mt-2 font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
+              label="Upgrade now →"
+            />
           )}
         </div>
         <Link href="/dashboard/journal" className="btn-primary">

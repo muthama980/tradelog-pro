@@ -15,7 +15,7 @@ const PLAN_CODES: Record<string, string | undefined> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { plan } = await req.json();
+    const { plan, channels } = await req.json();
 
     if (!['core', 'pro', 'prop'].includes(plan)) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (planCode) body.plan = planCode;
+    if (Array.isArray(channels) && channels.length > 0) body.channels = channels;
 
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',

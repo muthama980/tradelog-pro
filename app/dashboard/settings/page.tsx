@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { CreditCard, User, Database, AlertTriangle, Palette, Star, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import UpgradeButton from '@/components/dashboard/UpgradeButton';
 
 export default async function SettingsPage() {
   const supabase = createClient();
@@ -46,18 +47,16 @@ export default async function SettingsPage() {
         )}
         <div className="pt-5 border-t border-border mt-2">
           <p className="text-sm text-text-muted mb-4 leading-relaxed">
-            Manage your subscription, switch plans, or update your payment method via the Lemon Squeezy portal.
+            Manage your subscription, switch plans, or upgrade via Paystack — card, M-Pesa, and Airtel Money accepted.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/pricing" className="btn-secondary text-sm">Compare plans</Link>
-            {profile?.ls_customer_id && (
-              <a href="https://app.lemonsqueezy.com/billing" target="_blank" rel="noopener noreferrer" className="btn-primary text-sm">
-                Manage billing →
-              </a>
+            {['trial', 'core', 'cancelled'].includes(plan) && (
+              <UpgradeButton className="btn-primary text-sm" label="Upgrade →" />
             )}
           </div>
           <p className="mt-5 mono-label tracking-wider">
-            All major cards via Lemon Squeezy
+            Powered by Paystack · Card, M-Pesa & Airtel Money
           </p>
         </div>
       </Section>
