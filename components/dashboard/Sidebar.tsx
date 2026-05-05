@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Settings, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Upload, Settings, LogOut, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 import { canAccess } from '@/lib/planGating';
@@ -15,6 +15,7 @@ interface Props {
 const NAV = [
   { href: '/dashboard',           label: 'Overview',  icon: LayoutDashboard },
   { href: '/dashboard/journal',   label: 'Journal',   icon: BookOpen },
+  { href: '/dashboard/import',    label: 'Import',    icon: Upload },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/coach',     label: 'AI Coach',  icon: Brain },
 ];
