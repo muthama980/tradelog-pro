@@ -9,7 +9,7 @@ import PaymentMethodModal from '@/components/PaymentMethodModal';
 const TIERS = [
   {
     name: 'Core',
-    price: 'KES 1,900',
+    price: '$19',
     planKey: 'core',
     badge: null,
     description: 'For the disciplined trader.',
@@ -27,7 +27,7 @@ const TIERS = [
   },
   {
     name: 'Pro',
-    price: 'KES 2,500',
+    price: '$25',
     planKey: 'pro',
     badge: 'RECOMMENDED',
     description: 'For the trader who wants an edge.',
@@ -35,7 +35,7 @@ const TIERS = [
       'Everything in Core',
       'AI Coach — weekly pattern analysis',
       'Advanced edge analytics',
-      'Binance & Bybit CSV import',
+      'Binance, Kraken & OKX CSV import',
       'Time-of-day & day-of-week stats',
       'Priority email support',
     ],
@@ -45,7 +45,7 @@ const TIERS = [
   },
   {
     name: 'Prop Trader',
-    price: 'KES 3,000',
+    price: '$30',
     planKey: 'prop',
     badge: 'FUNDED TRADERS',
     description: 'For the trader chasing capital.',
@@ -172,7 +172,7 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
 
           <div className="mt-10 text-center">
             <p className="mono-label tracking-wider">
-              All plans · Powered by Paystack · Card, M-Pesa & Airtel Money · KES
+              All plans · 4-day free trial · Cancel anytime
             </p>
           </div>
         </div>
