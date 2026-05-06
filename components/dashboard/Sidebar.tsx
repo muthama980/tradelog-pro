@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
-import { canAccess } from '@/lib/planGating';
 
 interface Props {
   isOpen: boolean;
@@ -72,8 +71,6 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
         {NAV.map((item) => {
           const Icon   = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
-          const isCoach = item.href === '/dashboard/coach';
-          const showProBadge = isCoach && plan !== null && !canAccess(plan, 'ai_coach');
           return (
             <Link
               key={item.href}
@@ -87,11 +84,6 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
             >
               <Icon size={15} strokeWidth={1.7} />
               <span className="flex-1">{item.label}</span>
-              {showProBadge && (
-                <span className="font-mono text-[8px] tracking-widest uppercase px-1.5 py-0.5 rounded bg-accent/15 text-accent border border-accent/30 shrink-0">
-                  PRO
-                </span>
-              )}
             </Link>
           );
         })}
