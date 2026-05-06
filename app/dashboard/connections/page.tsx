@@ -1,73 +1,135 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
   Plug, RefreshCw, Trash2, X, Loader2, CheckCircle, AlertCircle,
-  Clock, Upload,
+  Clock, Upload, Bell, ChevronRight, FileText, Zap, Info,
 } from 'lucide-react';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Connection {
   id: string;
-  exchange: 'binance' | 'bybit';
+  exchange: string;
   status: 'active' | 'error' | 'disconnected';
   last_synced_at: string | null;
   error_message: string | null;
 }
 
-interface SyncResult {
-  imported: number;
-  message: string;
-}
+interface SyncResult { imported: number; message: string; }
 
 interface CsvTrade {
-  symbol: string;
-  market: string;
-  direction: 'long' | 'short';
-  entry_price: number;
-  exit_price: number | null;
-  position_size: number;
-  fees: number;
-  pnl: number | null;
-  opened_at: string;
-  closed_at: string | null;
-  status: 'open' | 'closed';
+  symbol: string; market: string; direction: 'long' | 'short';
+  entry_price: number; exit_price: number | null; position_size: number;
+  fees: number; pnl: number | null; opened_at: string;
+  closed_at: string | null; status: 'open' | 'closed';
 }
 
-const EXCHANGES = [
-  {
-    id: 'bybit' as const,
-    name: 'Bybit',
-    color: '#F7941D',
-    label: 'BY',
-    instructions: [
-      'Go to Bybit → Account → API Management',
-      'Click "Create New Key" → select "System-generated API Keys"',
-      'Label it "TradeLog Pro" and enable ONLY "Read" permission',
-      'Do NOT enable Trading, Withdrawal, or Transfer',
-      'Complete 2FA verification and copy the API Key and Secret',
-    ],
-  },
-  {
-    id: 'binance' as const,
-    name: 'Binance',
-    color: '#F0B90B',
-    label: 'B',
+type ExchangeId = 'binance' | 'coinbase' | 'kraken' | 'okx';
+
+type Method =
+  | { kind: 'api'; exchange: ExchangeId; name: string; hint: string }
+  | { kind: 'csv'; format: string; name: string; hint: string }
+  | { kind: 'coming-soon'; name: string; hint: string }
+  | { kind: 'manual'; name: string; hint: string };
+
+// ─── Exchange metadata ────────────────────────────────────────────────────────
+
+const EXCHANGE_META: Record<ExchangeId, {
+  name: string; color: string; logoText: string; logoTextColor: string;
+  hasPassphrase?: boolean; instructions: string[];
+}> = {
+  binance: {
+    name: 'Binance', color: '#F0B90B', logoText: 'B', logoTextColor: '#000',
     instructions: [
       'Go to Binance → Account → API Management',
       'Click "Create API" → select "System generated"',
       'Label it "TradeLog Pro"',
       'Enable ONLY "Enable Reading" permission',
       'Do NOT enable Spot, Margin, Futures Trading or Withdrawals',
-      'Complete security verification and copy the API Key and Secret',
+      'Copy the API Key and Secret Key',
     ],
   },
-];
+  coinbase: {
+    name: 'Coinbase', color: '#0052FF', logoText: 'CB', logoTextColor: '#fff',
+    instructions: [
+      'Go to Coinbase Advanced Trade → Settings → API',
+      'Click "New API Key"',
+      'Enable ONLY "View" permissions',
+      'Do NOT enable any Trade or Transfer permissions',
+      'Copy the API Key and API Secret',
+    ],
+  },
+  kraken: {
+    name: 'Kraken', color: '#5741D9', logoText: 'K', logoTextColor: '#fff',
+    instructions: [
+      'Go to Kraken → Security → API',
+      'Click "Add key"',
+      'Enable: Query Funds, Query Open Orders & Trades, Query Closed Orders & Trades',
+      'Do NOT enable any trading or withdrawal permissions',
+      'Copy the API Key and Private Key',
+    ],
+  },
+  okx: {
+    name: 'OKX', color: '#1A1A1A', logoText: 'OKX', logoTextColor: '#fff',
+    hasPassphrase: true,
+    instructions: [
+      'Go to OKX → Account → API Management',
+      'Click "Create API key"',
+      'Select "Read only" permissions',
+      'Create a passphrase — you will need it below',
+      'Do NOT enable any trading permissions',
+      'Copy the API Key, Secret Key, and Passphrase',
+    ],
+  },
+};
 
-const CSV_SOURCES = [
-  { id: 'binance',     name: 'Binance',          color: '#F0B90B', label: 'B',  hint: 'Spot & Futures history' },
-  { id: 'bybit',       name: 'Bybit',             color: '#F7941D', label: 'BY', hint: 'Perpetuals history' },
-  { id: 'metatrader',  name: 'MetaTrader 4 / 5',  color: '#1565C0', label: 'MT', hint: 'Forex & CFD statements' },
-  { id: 'generic',     name: 'Other / Generic',   color: '#52525B', label: '?',  hint: 'Any trade CSV' },
+// ─── Market data ──────────────────────────────────────────────────────────────
+
+const MARKETS: {
+  id: string; name: string; description: string; symbol: string;
+  note?: string; methods: Method[];
+}[] = [
+  {
+    id: 'crypto', name: 'Crypto', description: 'BTC, ETH, altcoins, futures', symbol: '₿',
+    methods: [
+      { kind: 'api', exchange: 'binance',  name: 'Binance API',  hint: 'Auto-sync spot & futures trades' },
+      { kind: 'api', exchange: 'coinbase', name: 'Coinbase API', hint: 'Auto-sync spot trades' },
+      { kind: 'api', exchange: 'kraken',   name: 'Kraken API',   hint: 'Auto-sync spot & futures trades' },
+      { kind: 'api', exchange: 'okx',      name: 'OKX API',      hint: 'Auto-sync spot & perpetual trades' },
+      { kind: 'csv', format: 'binance', name: 'CSV Import', hint: 'Upload trade history from any exchange' },
+    ],
+  },
+  {
+    id: 'forex', name: 'Forex', description: 'Currency pairs', symbol: 'FX',
+    note: 'Forex brokers primarily support CSV import. Upload your trade history to get started.',
+    methods: [
+      { kind: 'coming-soon', name: 'OANDA API',        hint: 'Auto-sync coming soon' },
+      { kind: 'csv', format: 'metatrader', name: 'MetaTrader 4/5 CSV', hint: 'Import MT4 or MT5 trade statements' },
+      { kind: 'coming-soon', name: 'cTrader CSV',      hint: 'Import coming soon' },
+      { kind: 'manual', name: 'Manual Entry',          hint: 'Log trades in your journal' },
+    ],
+  },
+  {
+    id: 'stocks', name: 'Stocks', description: 'Equities, indices', symbol: '↗',
+    note: 'Stock brokers primarily support CSV import. Upload your trade history to get started.',
+    methods: [
+      { kind: 'coming-soon', name: 'Alpaca API',                hint: 'Auto-sync coming soon' },
+      { kind: 'coming-soon', name: 'Interactive Brokers CSV',   hint: 'Import coming soon' },
+      { kind: 'coming-soon', name: 'TradingView CSV',           hint: 'Import coming soon' },
+      { kind: 'manual', name: 'Manual Entry',                   hint: 'Log trades in your journal' },
+    ],
+  },
+  {
+    id: 'futures', name: 'Futures', description: 'Commodities, indices', symbol: '◈',
+    note: 'Futures brokers primarily support CSV import. Upload your trade history to get started.',
+    methods: [
+      { kind: 'csv', format: 'metatrader', name: 'MetaTrader CSV', hint: 'Import futures trade statements' },
+      { kind: 'coming-soon', name: 'NinjaTrader CSV', hint: 'Import coming soon' },
+      { kind: 'manual', name: 'Manual Entry',         hint: 'Log trades in your journal' },
+    ],
+  },
 ];
 
 function timeSince(iso: string): string {
@@ -80,20 +142,29 @@ function timeSince(iso: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function ConnectionsPage() {
-  // API connections state
+  const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
+  const [notifyToast, setNotifyToast] = useState(false);
+
+  // Connections
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [connectingExchange, setConnectingExchange] = useState<'binance' | 'bybit' | null>(null);
+
+  // Connect modal
+  const [connectingExchange, setConnectingExchange] = useState<ExchangeId | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
+  const [apiPassphrase, setApiPassphrase] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [syncing, setSyncing] = useState<string | null>(null);
+
+  // Sync
+  const [syncingExchange, setSyncingExchange] = useState<string | null>(null);
   const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
 
-  // Tab + CSV import state
-  const [tab, setTab] = useState<'api' | 'csv'>('api');
+  // CSV
   const [csvFormat, setCsvFormat] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -109,40 +180,43 @@ export default function ConnectionsPage() {
     if (res.ok) setConnections(await res.json());
     setLoading(false);
   }
-
   useEffect(() => { load(); }, []);
 
-  function openConnectModal(exchange: 'binance' | 'bybit') {
+  // ── Connect modal ────────────────────────────────────────────────────────────
+
+  function openConnectModal(exchange: ExchangeId) {
+    setApiKey(''); setApiSecret(''); setApiPassphrase(''); setSaveError('');
     setConnectingExchange(exchange);
-    setApiKey('');
-    setApiSecret('');
-    setSaveError('');
   }
 
   async function saveConnection() {
-    if (!apiKey.trim() || !apiSecret.trim()) {
-      setSaveError('Both API Key and Secret are required.');
-      return;
-    }
-    setSaving(true);
-    setSaveError('');
+    if (!connectingExchange) return;
+    const meta = EXCHANGE_META[connectingExchange];
+    if (!apiKey.trim() || !apiSecret.trim()) { setSaveError('API Key and Secret are required.'); return; }
+    if (meta.hasPassphrase && !apiPassphrase.trim()) { setSaveError('Passphrase is required for OKX.'); return; }
+    setSaving(true); setSaveError('');
+    const body: Record<string, string> = {
+      exchange: connectingExchange,
+      api_key: apiKey.trim(),
+      api_secret: apiSecret.trim(),
+    };
+    if (meta.hasPassphrase) body.api_passphrase = apiPassphrase.trim();
     const res = await fetch('/api/connections', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ exchange: connectingExchange, api_key: apiKey.trim(), api_secret: apiSecret.trim() }),
+      body: JSON.stringify(body),
     });
     setSaving(false);
-    if (!res.ok) {
-      const err = await res.json();
-      setSaveError(err.error ?? 'Failed to save connection.');
-      return;
-    }
+    if (!res.ok) { const err = await res.json(); setSaveError(err.error ?? 'Failed to save.'); return; }
     setConnectingExchange(null);
     load();
   }
 
-  async function disconnect(exchange: string) {
-    if (!confirm(`Disconnect ${exchange}? Your existing trades will not be deleted.`)) return;
+  // ── Disconnect ───────────────────────────────────────────────────────────────
+
+  async function disconnect(exchange: ExchangeId) {
+    const meta = EXCHANGE_META[exchange];
+    if (!confirm(`Disconnect ${meta.name}? Your existing trades will not be deleted.`)) return;
     await fetch('/api/connections', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -151,55 +225,49 @@ export default function ConnectionsPage() {
     load();
   }
 
-  async function syncNow(exchange: string) {
-    setSyncing(exchange);
-    setSyncResults(prev => ({ ...prev, [exchange]: { imported: 0, message: '' } }));
+  // ── Sync ─────────────────────────────────────────────────────────────────────
+
+  async function syncNow(exchange: ExchangeId) {
+    setSyncingExchange(exchange);
     const res = await fetch(`/api/sync-trades/${exchange}`, { method: 'POST' });
     const data = await res.json();
-    setSyncing(null);
+    setSyncingExchange(null);
     setSyncResults(prev => ({
       ...prev,
       [exchange]: {
         imported: data.imported ?? 0,
         message: res.ok
-          ? (data.imported > 0 ? `${data.imported} new trade${data.imported !== 1 ? 's' : ''} imported` : 'All trades up to date')
+          ? (data.imported > 0
+            ? `${data.imported} new trade${data.imported !== 1 ? 's' : ''} imported`
+            : 'All trades up to date')
           : (data.error ?? 'Sync failed'),
       },
     }));
     load();
   }
 
-  function selectFormat(id: string) {
-    if (id !== csvFormat) {
-      setPreviewTrades(null);
-      setParseError('');
-      setImportResult(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-    setCsvFormat(id);
+  // ── CSV ──────────────────────────────────────────────────────────────────────
+
+  function selectCsvFormat(format: string) {
+    if (csvFormat === format) { setCsvFormat(null); return; }
+    setCsvFormat(format);
+    setPreviewTrades(null); setParseError(''); setImportResult(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function handleFile(file: File | null | undefined) {
     if (!file || !csvFormat) return;
-    setParseError('');
-    setPreviewTrades(null);
-    setImportResult(null);
-    setParsing(true);
+    setParseError(''); setPreviewTrades(null); setImportResult(null); setParsing(true);
     const fd = new FormData();
     fd.append('file', file);
     fd.append('format', csvFormat);
     const res = await fetch('/api/import-csv', { method: 'POST', body: fd });
     const data = await res.json();
     setParsing(false);
-    if (!res.ok) {
-      setParseError(data.error ?? 'Failed to parse CSV');
-      return;
-    }
+    if (!res.ok) { setParseError(data.error ?? 'Failed to parse CSV'); return; }
     if (!data.trades || data.trades.length === 0) {
-      const debugStr = data.debug
-        ? ` | Headers detected: ${JSON.stringify(data.debug.headers ?? [])}`
-        : '';
-      setParseError((data.error ?? 'No trades found.') + debugStr);
+      const dbg = data.debug ? ` | Headers: ${JSON.stringify(data.debug.headers ?? [])}` : '';
+      setParseError((data.error ?? 'No trades found.') + dbg);
       return;
     }
     setPreviewTrades(data.trades);
@@ -221,181 +289,243 @@ export default function ConnectionsPage() {
   }
 
   function resetCsvFlow() {
-    setPreviewTrades(null);
-    setParseError('');
-    setImportResult(null);
-    setCsvFormat(null);
+    setCsvFormat(null); setPreviewTrades(null); setParseError(''); setImportResult(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  const activeExchange = connectingExchange ? EXCHANGES.find(e => e.id === connectingExchange)! : null;
+  function showNotify() {
+    setNotifyToast(true);
+    setTimeout(() => setNotifyToast(false), 3000);
+  }
+
+  const currentMarket = MARKETS.find(m => m.id === selectedMarket);
+
+  // ─── Render exchange API card ─────────────────────────────────────────────
+
+  function renderApiCard(exchange: ExchangeId, name: string, hint: string, i: number) {
+    const meta = EXCHANGE_META[exchange];
+    const conn = connections.find(c => c.exchange === exchange);
+    const isConnected = !!conn;
+    const isLive = conn?.status !== 'error';
+    const syncing = syncingExchange === exchange;
+    const result = syncResults[exchange];
+
+    return (
+      <div key={i} className="card rounded-xl p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-black text-xs shrink-0"
+            style={{ backgroundColor: meta.color, color: meta.logoTextColor }}
+          >
+            {meta.logoText}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-text text-sm">{name}</div>
+            <div className="text-text-dim text-xs mt-0.5">{hint}</div>
+          </div>
+          {!loading && (
+            <span className={`flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest shrink-0 ${
+              isConnected ? (isLive ? 'text-signal-green' : 'text-signal-red') : 'text-text-dim'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                isConnected ? (isLive ? 'bg-signal-green' : 'bg-signal-red') : 'bg-text-dim'
+              }`} />
+              {isConnected ? (isLive ? 'Live' : 'Error') : 'Off'}
+            </span>
+          )}
+        </div>
+
+        {conn?.last_synced_at && (
+          <div className="flex items-center gap-1.5 text-text-dim text-xs">
+            <Clock size={11} /> Last synced {timeSince(conn.last_synced_at)}
+          </div>
+        )}
+
+        {conn?.status === 'error' && conn.error_message && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-signal-red/10 border border-signal-red/20">
+            <AlertCircle size={13} className="text-signal-red shrink-0 mt-0.5" />
+            <span className="text-signal-red text-xs">{conn.error_message}</span>
+          </div>
+        )}
+
+        {result?.message && (
+          <div className={`flex items-center gap-2 text-xs ${result.imported > 0 ? 'text-signal-green' : 'text-text-muted'}`}>
+            <CheckCircle size={12} /> {result.message}
+          </div>
+        )}
+
+        <div className="flex gap-2 mt-auto">
+          {isConnected ? (
+            <>
+              <button
+                onClick={() => syncNow(exchange)}
+                disabled={syncing}
+                className="btn-primary flex-1 justify-center text-sm disabled:opacity-50"
+              >
+                {syncing
+                  ? <><Loader2 size={13} className="mr-1.5 animate-spin" /> Syncing…</>
+                  : <><RefreshCw size={13} className="mr-1.5" /> Sync Now</>
+                }
+              </button>
+              <button onClick={() => disconnect(exchange)} className="btn-secondary px-3" title="Disconnect">
+                <Trash2 size={14} className="text-signal-red" />
+              </button>
+            </>
+          ) : (
+            <button onClick={() => openConnectModal(exchange)} className="btn-secondary flex-1 justify-center text-sm">
+              <Plug size={13} className="mr-1.5" /> Connect
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Render method card ───────────────────────────────────────────────────
+
+  function renderMethod(method: Method, i: number) {
+    if (method.kind === 'api') {
+      return renderApiCard(method.exchange, method.name, method.hint, i);
+    }
+
+    if (method.kind === 'csv') {
+      const isSelected = csvFormat === method.format;
+      return (
+        <button
+          key={i}
+          onClick={() => selectCsvFormat(method.format)}
+          className={`card rounded-xl p-5 flex items-center gap-4 text-left transition-colors hover:border-border-strong ${
+            isSelected ? 'border-accent/50 bg-accent/5' : ''
+          }`}
+        >
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-bg-elevated border border-border shrink-0">
+            <Upload size={16} className="text-text-muted" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-text text-sm">{method.name}</div>
+            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+          </div>
+          {isSelected
+            ? <CheckCircle size={15} className="text-accent shrink-0" />
+            : <ChevronRight size={15} className="text-text-dim shrink-0" />
+          }
+        </button>
+      );
+    }
+
+    if (method.kind === 'coming-soon') {
+      return (
+        <div key={i} className="card rounded-xl p-5 flex items-center gap-4 opacity-70">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-bg-elevated border border-border shrink-0">
+            <Zap size={16} className="text-text-dim" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-text text-sm">{method.name}</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest bg-bg-elevated text-text-dim border border-border">
+                Soon
+              </span>
+            </div>
+            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+          </div>
+          <button
+            onClick={showNotify}
+            className="shrink-0 p-2 rounded-lg border border-border hover:border-border-strong hover:bg-bg-elevated transition-colors"
+            title="Notify me"
+          >
+            <Bell size={14} className="text-text-muted" />
+          </button>
+        </div>
+      );
+    }
+
+    if (method.kind === 'manual') {
+      return (
+        <Link
+          key={i}
+          href="/dashboard/journal"
+          className="card rounded-xl p-5 flex items-center gap-4 hover:border-border-strong transition-colors"
+        >
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-bg-elevated border border-border shrink-0">
+            <FileText size={16} className="text-text-muted" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-text text-sm">{method.name}</div>
+            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+          </div>
+          <ChevronRight size={15} className="text-text-dim shrink-0" />
+        </Link>
+      );
+    }
+
+    return null;
+  }
+
+  const modalMeta = connectingExchange ? EXCHANGE_META[connectingExchange] : null;
 
   return (
     <div className="p-8 md:p-10 max-w-4xl">
+
       {/* Header */}
       <div className="mb-8">
         <p className="mono-label mb-2">Connections</p>
-        <h1 className="text-3xl font-bold text-text tracking-tight">Connections</h1>
+        <h1 className="text-3xl font-bold text-text tracking-tight">Connect Your Broker</h1>
         <p className="text-text-muted mt-2 text-sm">
-          Connect via API for live sync, or import trade history from a CSV export.
+          Choose your market type to see available connection methods.
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-bg-elevated rounded-xl border border-border mb-8 w-fit">
-        {(['api', 'csv'] as const).map(t => (
+      {/* Market category cards */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {MARKETS.map(market => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t ? 'bg-bg-surface text-text border border-border' : 'text-text-muted hover:text-text'
+            key={market.id}
+            onClick={() => {
+              setSelectedMarket(prev => prev === market.id ? null : market.id);
+              resetCsvFlow();
+            }}
+            className={`card rounded-xl p-5 text-left transition-all hover:border-border-strong ${
+              selectedMarket === market.id ? 'border-accent/60 bg-accent/5' : ''
             }`}
           >
-            {t === 'api' ? 'API Connections' : 'CSV Import'}
+            <div className="text-xl font-mono font-black text-accent mb-3">{market.symbol}</div>
+            <div className="font-semibold text-text text-sm">{market.name}</div>
+            <div className="text-text-dim text-xs mt-0.5">{market.description}</div>
+            {selectedMarket === market.id && (
+              <div className="mt-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-accent">Selected ↓</span>
+              </div>
+            )}
           </button>
         ))}
       </div>
 
-      {/* ── API Connections tab ── */}
-      {tab === 'api' && (
-        loading ? (
-          <div className="p-12 text-center text-text-dim">Loading…</div>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {EXCHANGES.map(ex => {
-              const conn = connections.find(c => c.exchange === ex.id);
-              const isConnected = !!conn;
-              const isSyncing = syncing === ex.id;
-              const result = syncResults[ex.id];
-
-              return (
-                <div key={ex.id} className="card rounded-xl p-6 flex flex-col gap-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-11 h-11 rounded-lg flex items-center justify-center font-mono font-black text-bg text-sm shrink-0"
-                        style={{ backgroundColor: ex.color }}
-                      >
-                        {ex.label}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-text">{ex.name}</div>
-                        <div className={`flex items-center gap-1.5 mt-0.5 font-mono text-[10px] uppercase tracking-widest ${
-                          isConnected
-                            ? conn!.status === 'error' ? 'text-signal-red' : 'text-signal-green'
-                            : 'text-text-dim'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full inline-block ${
-                            isConnected
-                              ? conn!.status === 'error' ? 'bg-signal-red' : 'bg-signal-green'
-                              : 'bg-text-dim'
-                          }`} />
-                          {isConnected ? (conn!.status === 'error' ? 'Error' : 'Connected') : 'Not connected'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {conn?.last_synced_at && (
-                    <div className="flex items-center gap-1.5 text-text-dim text-xs">
-                      <Clock size={11} />
-                      Last synced {timeSince(conn.last_synced_at)}
-                    </div>
-                  )}
-
-                  {conn?.status === 'error' && conn.error_message && (
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-signal-red/10 border border-signal-red/20">
-                      <AlertCircle size={13} className="text-signal-red shrink-0 mt-0.5" />
-                      <span className="text-signal-red text-xs">{conn.error_message}</span>
-                    </div>
-                  )}
-
-                  {result?.message && (
-                    <div className={`flex items-center gap-2 text-xs ${result.imported > 0 ? 'text-signal-green' : 'text-text-muted'}`}>
-                      <CheckCircle size={12} />
-                      {result.message}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2 mt-auto">
-                    {isConnected ? (
-                      <>
-                        <button
-                          onClick={() => syncNow(ex.id)}
-                          disabled={isSyncing}
-                          className="btn-primary flex-1 justify-center text-sm disabled:opacity-50"
-                        >
-                          {isSyncing
-                            ? <><Loader2 size={13} className="mr-1.5 animate-spin" /> Syncing…</>
-                            : <><RefreshCw size={13} className="mr-1.5" /> Sync Now</>
-                          }
-                        </button>
-                        <button
-                          onClick={() => disconnect(ex.id)}
-                          className="btn-secondary px-3"
-                          title="Disconnect"
-                        >
-                          <Trash2 size={14} className="text-signal-red" />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => openConnectModal(ex.id)}
-                        className="btn-secondary flex-1 justify-center text-sm"
-                      >
-                        <Plug size={13} className="mr-1.5" /> Connect
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )
-      )}
-
-      {/* ── CSV Import tab ── */}
-      {tab === 'csv' && (
+      {/* Methods panel */}
+      {currentMarket && (
         <div>
-          {/* Format cards */}
+          <p className="mono-label mb-4">{currentMarket.name} — Connection Methods</p>
+
+          {/* Note banner for non-crypto markets */}
+          {currentMarket.note && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-bg-elevated border border-border mb-4">
+              <Info size={15} className="text-text-muted shrink-0 mt-0.5" />
+              <p className="text-text-muted text-sm">{currentMarket.note}</p>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4 mb-6">
-            {CSV_SOURCES.map(src => (
-              <button
-                key={src.id}
-                onClick={() => selectFormat(src.id)}
-                className={`card rounded-xl p-5 flex items-center gap-4 text-left transition-colors hover:border-border-strong ${
-                  csvFormat === src.id ? 'border-accent/50 bg-accent/5' : ''
-                }`}
-              >
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-black text-bg text-xs shrink-0"
-                  style={{ backgroundColor: src.color }}
-                >
-                  {src.label}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-text text-sm">{src.name}</div>
-                  <div className="text-text-dim text-xs mt-0.5">{src.hint}</div>
-                </div>
-                {csvFormat === src.id && (
-                  <CheckCircle size={15} className="text-accent shrink-0" />
-                )}
-              </button>
-            ))}
+            {currentMarket.methods.map((method, i) => renderMethod(method, i))}
           </div>
 
-          {/* Upload zone */}
+          {/* CSV upload zone */}
           {csvFormat && !previewTrades && !importResult && (
             <div className="card rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-text">
-                  Upload {CSV_SOURCES.find(s => s.id === csvFormat)?.name} CSV
-                </p>
+                <p className="text-sm font-medium text-text">Upload CSV</p>
                 <button onClick={resetCsvFlow} className="text-text-dim hover:text-text transition-colors">
                   <X size={16} />
                 </button>
               </div>
-
               {parsing ? (
                 <div className="py-10 flex flex-col items-center gap-3">
                   <Loader2 size={24} className="animate-spin text-accent" />
@@ -406,33 +536,23 @@ export default function ConnectionsPage() {
                   <div
                     onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
-                    onDrop={e => {
-                      e.preventDefault();
-                      setDragOver(false);
-                      handleFile(e.dataTransfer.files[0]);
-                    }}
+                    onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors select-none ${
-                      dragOver
-                        ? 'border-accent bg-accent/5'
-                        : 'border-border hover:border-border-strong hover:bg-bg-elevated'
+                      dragOver ? 'border-accent bg-accent/5' : 'border-border hover:border-border-strong hover:bg-bg-elevated'
                     }`}
                   >
                     <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".csv,.txt"
+                      ref={fileInputRef} type="file" accept=".csv,.txt"
                       className="hidden"
                       onChange={e => handleFile(e.target.files?.[0])}
                     />
                     <Upload size={22} className="mx-auto mb-3 text-text-dim" />
                     <p className="text-sm text-text-muted">
-                      Drop your CSV here or{' '}
-                      <span className="text-accent">browse files</span>
+                      Drop your CSV here or <span className="text-accent">browse files</span>
                     </p>
                     <p className="text-xs text-text-dim mt-1">.csv files only</p>
                   </div>
-
                   {parseError && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-signal-red/10 border border-signal-red/20 mt-4">
                       <AlertCircle size={13} className="text-signal-red shrink-0 mt-0.5" />
@@ -460,18 +580,14 @@ export default function ConnectionsPage() {
                   <X size={16} />
                 </button>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-bg-elevated">
                       {['Symbol', 'Dir', 'Entry', 'Size', 'Fees', 'Date'].map(h => (
-                        <th
-                          key={h}
-                          className={`px-4 py-2.5 text-text-dim font-mono text-[10px] uppercase tracking-wider whitespace-nowrap ${
-                            ['Entry', 'Size', 'Fees'].includes(h) ? 'text-right' : 'text-left'
-                          } ${h === 'Date' ? 'hidden sm:table-cell' : ''}`}
-                        >
+                        <th key={h} className={`px-4 py-2.5 text-text-dim font-mono text-[10px] uppercase tracking-wider whitespace-nowrap ${
+                          ['Entry', 'Size', 'Fees'].includes(h) ? 'text-right' : 'text-left'
+                        } ${h === 'Date' ? 'hidden sm:table-cell' : ''}`}>
                           {h}
                         </th>
                       ))}
@@ -483,12 +599,8 @@ export default function ConnectionsPage() {
                         <td className="px-4 py-2.5 font-mono text-xs text-text">{t.symbol}</td>
                         <td className="px-4 py-2.5">
                           <span className={`font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                            t.direction === 'long'
-                              ? 'text-signal-green bg-signal-green/10'
-                              : 'text-signal-red bg-signal-red/10'
-                          }`}>
-                            {t.direction}
-                          </span>
+                            t.direction === 'long' ? 'text-signal-green bg-signal-green/10' : 'text-signal-red bg-signal-red/10'
+                          }`}>{t.direction}</span>
                         </td>
                         <td className="px-4 py-2.5 font-mono text-xs text-text text-right">{t.entry_price}</td>
                         <td className="px-4 py-2.5 font-mono text-xs text-text text-right">{t.position_size}</td>
@@ -506,14 +618,10 @@ export default function ConnectionsPage() {
                   </div>
                 )}
               </div>
-
               <div className="px-5 py-4 border-t border-border flex gap-3">
-                <button onClick={resetCsvFlow} className="btn-secondary text-sm">
-                  Start over
-                </button>
+                <button onClick={resetCsvFlow} className="btn-secondary text-sm">Start over</button>
                 <button
-                  onClick={confirmImport}
-                  disabled={importing}
+                  onClick={confirmImport} disabled={importing}
                   className="btn-primary flex-1 justify-center text-sm disabled:opacity-50"
                 >
                   {importing
@@ -544,8 +652,19 @@ export default function ConnectionsPage() {
         </div>
       )}
 
+      {/* Notify toast */}
+      {notifyToast && (
+        <div className="fixed bottom-6 right-6 z-50 card rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg">
+          <Bell size={14} className="text-accent shrink-0" />
+          <p className="text-sm text-text">We&apos;ll let you know when this is ready.</p>
+          <button onClick={() => setNotifyToast(false)} className="text-text-dim hover:text-text transition-colors ml-1">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Connect modal */}
-      {connectingExchange && activeExchange && (
+      {connectingExchange && modalMeta && (
         <div className="fixed inset-0 z-50 bg-bg/80 backdrop-blur-sm flex items-start justify-center p-4 md:p-12 overflow-y-auto">
           <div className="card rounded-xl w-full max-w-lg p-8 my-8 relative">
             <button
@@ -557,21 +676,21 @@ export default function ConnectionsPage() {
 
             <div className="flex items-center gap-3 mb-6">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-black text-bg text-xs shrink-0"
-                style={{ backgroundColor: activeExchange.color }}
+                className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-black text-xs shrink-0"
+                style={{ backgroundColor: modalMeta.color, color: modalMeta.logoTextColor }}
               >
-                {activeExchange.label}
+                {modalMeta.logoText}
               </div>
               <div>
                 <p className="mono-label">Connect Exchange</p>
-                <h2 className="font-bold text-xl text-text tracking-tight">{activeExchange.name}</h2>
+                <h2 className="font-bold text-xl text-text tracking-tight">{modalMeta.name}</h2>
               </div>
             </div>
 
             <div className="mb-6 p-4 rounded-xl bg-bg-elevated border border-border">
               <p className="font-mono text-[10px] uppercase tracking-widest text-text-dim mb-3">Setup Instructions</p>
               <ol className="space-y-2">
-                {activeExchange.instructions.map((step, i) => (
+                {modalMeta.instructions.map((step, i) => (
                   <li key={i} className="flex gap-2.5 text-sm text-text-muted">
                     <span className="font-mono text-accent shrink-0">{i + 1}.</span>
                     {step}
@@ -584,26 +703,34 @@ export default function ConnectionsPage() {
               <div>
                 <label className="mono-label mb-2 block">API Key</label>
                 <input
-                  type="text"
-                  value={apiKey}
-                  onChange={e => setApiKey(e.target.value)}
+                  type="text" value={apiKey} onChange={e => setApiKey(e.target.value)}
                   className="form-input font-mono text-sm"
                   placeholder="Paste your API key here"
-                  autoComplete="off"
-                  spellCheck={false}
+                  autoComplete="off" spellCheck={false}
                 />
               </div>
               <div>
-                <label className="mono-label mb-2 block">API Secret</label>
+                <label className="mono-label mb-2 block">
+                  {connectingExchange === 'kraken' ? 'Private Key' : 'Secret Key'}
+                </label>
                 <input
-                  type="password"
-                  value={apiSecret}
-                  onChange={e => setApiSecret(e.target.value)}
+                  type="password" value={apiSecret} onChange={e => setApiSecret(e.target.value)}
                   className="form-input font-mono text-sm"
-                  placeholder="Paste your API secret here"
+                  placeholder={connectingExchange === 'kraken' ? 'Paste your private key' : 'Paste your secret key'}
                   autoComplete="new-password"
                 />
               </div>
+              {modalMeta.hasPassphrase && (
+                <div>
+                  <label className="mono-label mb-2 block">Passphrase</label>
+                  <input
+                    type="password" value={apiPassphrase} onChange={e => setApiPassphrase(e.target.value)}
+                    className="form-input font-mono text-sm"
+                    placeholder="Paste your API passphrase"
+                    autoComplete="new-password"
+                  />
+                </div>
+              )}
             </div>
 
             {saveError && (

@@ -62,7 +62,7 @@ function addSlash(symbol: string): string {
 
 function toISO(str: string): string {
   if (!str) return new Date().toISOString();
-  // Handle time-first Bybit format: "HH:MM[:SS] YYYY-MM-DD"
+  // Handle time-first format: "HH:MM[:SS] YYYY-MM-DD"
   const timeFirst = str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(\d{4}-\d{2}-\d{2})$/);
   if (timeFirst) {
     const time = timeFirst[1].length === 5 ? timeFirst[1] + ':00' : timeFirst[1];
@@ -72,43 +72,6 @@ function toISO(str: string): string {
   const normalized = str.replace(' ', 'T');
   const d = new Date(normalized.endsWith('Z') ? normalized : normalized + 'Z');
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
-}
-
-// Bybit perpetual export
-// Headers (exact, including Bybit's typo "Trasaction ID"):
-// Market,Filled Type,Filled Quantity,Filled Price,Order Price,Fee Rate,Trading Fee,feeCoin,ExecFeeV2,Direction,Order Type,Trasaction ID,Order No.,Transaction Time(UTC+0)
-export function parseBybit(text: string): ParsedTrade[] {
-  const { rows } = parseCSV(text);
-  // Only process rows where Filled Type is "Trade" (skip Funding, AdlTrade, etc.)
-  const tradeRows = rows.filter(row => {
-    const ft = (row['Filled Type'] ?? '').toLowerCase().trim();
-    return ft === 'trade' || ft === '';  // empty = older exports without this column
-  });
-  console.log('[parseBybit] total rows:', rows.length, 'trade rows:', tradeRows.length);
-  return tradeRows.flatMap(row => {
-    const symbol = addSlash(row['Market'] ?? '');
-    const dir = (row['Direction'] ?? '').toLowerCase().trim();
-    if (!symbol || !['buy', 'sell', 'long', 'short'].includes(dir)) return [];
-    const entryPrice = parseFloat(row['Filled Price'] ?? '');
-    const qty = parseFloat(row['Filled Quantity'] ?? '');
-    // Trading Fee may be in scientific notation e.g. "5.5E-4" — Number() handles it
-    const feeRaw = row['Trading Fee'] ?? '0';
-    const fee = Number(feeRaw);
-    if (isNaN(entryPrice) || isNaN(qty) || qty === 0) return [];
-    return [{
-      symbol,
-      market: 'crypto' as const,
-      direction: ['buy', 'long'].includes(dir) ? 'long' as const : 'short' as const,
-      entry_price: entryPrice,
-      exit_price: null,
-      position_size: qty,
-      fees: isNaN(fee) ? 0 : Math.abs(fee),
-      pnl: null,
-      opened_at: toISO(row['Transaction Time(UTC+0)'] ?? ''),
-      closed_at: null,
-      status: 'closed' as const,
-    }];
-  });
 }
 
 // Binance spot/futures trade history export
