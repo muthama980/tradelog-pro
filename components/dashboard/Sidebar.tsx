@@ -15,7 +15,7 @@ interface Props {
 const NAV = [
   { href: '/dashboard',           label: 'Overview',  icon: LayoutDashboard },
   { href: '/dashboard/journal',   label: 'Journal',   icon: BookOpen },
-  { href: '/dashboard/connections', label: 'Exchanges', icon: Plug },
+  { href: '/dashboard/connections', label: 'Connections', icon: Plug },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/coach',     label: 'AI Coach',  icon: Brain },
 ];

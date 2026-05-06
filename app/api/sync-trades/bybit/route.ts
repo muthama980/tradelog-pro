@@ -36,11 +36,12 @@ async function fetchBybitExecutions(apiKey: string, apiSecret: string): Promise<
   const timestamp = Date.now().toString();
   const recvWindow = '5000';
   const queryString = 'category=linear&limit=100';
+  // Bybit V5 GET signature: timestamp + apiKey + recvWindow + queryString
   const preSign = timestamp + apiKey + recvWindow + queryString;
   const signature = crypto.createHmac('sha256', apiSecret).update(preSign).digest('hex');
 
-  const url = `https://api.bybit.com/v5/execution/list?${queryString}`;
-  const res = await fetch(url, {
+  const response = await fetch(`https://api.bybit.com/v5/execution/list?${queryString}`, {
+    method: 'GET',
     headers: {
       'X-BAPI-API-KEY': apiKey,
       'X-BAPI-TIMESTAMP': timestamp,
@@ -49,9 +50,22 @@ async function fetchBybitExecutions(apiKey: string, apiSecret: string): Promise<
     },
   });
 
-  const json = await res.json();
-  if (json.retCode !== 0) throw new Error(json.retMsg ?? 'Bybit API error');
-  return (json.result?.list ?? []) as BybitExecution[];
+  const text = await response.text();
+  console.log('[bybit-sync] HTTP status:', response.status);
+  console.log('[bybit-sync] Raw response (first 500):', text.substring(0, 500));
+
+  let data: { retCode: number; retMsg: string; result?: { list: BybitExecution[] } };
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('Invalid response from Bybit: ' + text.substring(0, 200));
+  }
+
+  if (data.retCode !== 0) {
+    throw new Error(`Bybit API error (${data.retCode}): ${data.retMsg}`);
+  }
+
+  return data.result?.list ?? [];
 }
 
 export async function POST() {
@@ -59,7 +73,6 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  // Load credentials
   const { data: conn } = await supabase
     .from('exchange_connections')
     .select('api_key, api_secret')
@@ -69,11 +82,16 @@ export async function POST() {
 
   if (!conn) return NextResponse.json({ error: 'Bybit not connected' }, { status: 404 });
 
+  // Trim credentials to remove any accidental whitespace
+  const apiKey = conn.api_key.trim();
+  const apiSecret = conn.api_secret.trim();
+
   let executions: BybitExecution[];
   try {
-    executions = await fetchBybitExecutions(conn.api_key, conn.api_secret);
+    executions = await fetchBybitExecutions(apiKey, apiSecret);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
+    console.error('[bybit-sync] Error:', msg);
     await supabase
       .from('exchange_connections')
       .update({ status: 'error', error_message: msg })
@@ -81,6 +99,8 @@ export async function POST() {
       .eq('exchange', 'bybit');
     return NextResponse.json({ error: msg }, { status: 502 });
   }
+
+  console.log('[bybit-sync] Executions fetched:', executions.length);
 
   // Group partial fills by orderId
   const byOrder: Record<string, OrderGroup> = {};
@@ -108,7 +128,6 @@ export async function POST() {
     return NextResponse.json({ imported: 0 });
   }
 
-  // Duplicate detection: existing (symbol, entry_price, opened_at[min])
   const { data: existing } = await supabase
     .from('trades')
     .select('symbol, entry_price, opened_at')
@@ -150,5 +169,6 @@ export async function POST() {
     .eq('user_id', user.id)
     .eq('exchange', 'bybit');
 
+  console.log('[bybit-sync] Imported:', imported);
   return NextResponse.json({ imported });
 }
