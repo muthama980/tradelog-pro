@@ -63,9 +63,9 @@ async function tryFetch(baseUrl: string, apiKey: string, apiSecret: string, quer
 async function fetchBybitExecutions(apiKey: string, apiSecret: string): Promise<BybitExecution[]> {
   const queryString = 'category=linear&limit=100';
 
-  // Try api.bytick.com first (Bybit's globally accessible domain, not CloudFront-blocked)
-  // Fall back to api.bybit.nl if that fails
-  const candidates = ['https://api.bytick.com', 'https://api.bybit.nl', 'https://api.bybit.com'];
+  // api.bybit.nl is the Netherlands endpoint, not geo-blocked by CloudFront
+  // api-testnet.bybit.com as last resort (won't have real trades but confirms connectivity)
+  const candidates = ['https://api.bybit.nl', 'https://api-testnet.bybit.com'];
   let lastError = '';
 
   for (const base of candidates) {

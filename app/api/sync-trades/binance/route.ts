@@ -34,16 +34,6 @@ function sign(queryString: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(queryString).digest('hex');
 }
 
-async function fetchActiveSymbols(apiKey: string): Promise<string[]> {
-  const res = await fetch('https://api.binance.com/api/v3/exchangeInfo', {
-    headers: { 'X-MBX-APIKEY': apiKey },
-  });
-  const json = await res.json();
-  return (json.symbols as BinanceSymbol[])
-    .filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT'))
-    .slice(0, 20) // limit to top 20 USDT pairs to avoid rate limits
-    .map(s => s.symbol);
-}
 
 async function fetchTradesForSymbol(
   apiKey: string,
@@ -75,9 +65,23 @@ export async function POST() {
 
   if (!conn) return NextResponse.json({ error: 'Binance not connected' }, { status: 404 });
 
+  const response = await fetch('https://api.binance.com/api/v3/exchangeInfo', {
+    headers: { 'X-MBX-APIKEY': conn.api_key },
+  });
+  const data = await response.json();
+  console.log('Binance response keys:', Object.keys(data));
+  const trades = Array.isArray(data) ? data : (data.trades || data.result || data.symbols || []);
+  if (!Array.isArray(trades)) {
+    return NextResponse.json({ error: 'Unexpected Binance response format', debug: JSON.stringify(data).substring(0, 500) });
+  }
+
+  const symbols = (trades as BinanceSymbol[])
+    .filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT'))
+    .slice(0, 20)
+    .map(s => s.symbol);
+
   let allTrades: BinanceTrade[] = [];
   try {
-    const symbols = await fetchActiveSymbols(conn.api_key);
     const results = await Promise.all(
       symbols.map(s => fetchTradesForSymbol(conn.api_key, conn.api_secret, s))
     );
