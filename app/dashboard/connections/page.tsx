@@ -191,12 +191,14 @@ export default function ConnectionsPage() {
     const res = await fetch('/api/import-csv', { method: 'POST', body: fd });
     const data = await res.json();
     setParsing(false);
-    if (!res.ok || data.error) {
+    if (!res.ok) {
       setParseError(data.error ?? 'Failed to parse CSV');
       return;
     }
     if (!data.trades || data.trades.length === 0) {
-      const debugStr = data.debug ? ` | Headers: ${JSON.stringify(data.debug.headers ?? [])}` : '';
+      const debugStr = data.debug
+        ? ` | Headers detected: ${JSON.stringify(data.debug.headers ?? [])}`
+        : '';
       setParseError((data.error ?? 'No trades found.') + debugStr);
       return;
     }

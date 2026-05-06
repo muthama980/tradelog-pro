@@ -62,6 +62,13 @@ function addSlash(symbol: string): string {
 
 function toISO(str: string): string {
   if (!str) return new Date().toISOString();
+  // Handle time-first Bybit format: "HH:MM[:SS] YYYY-MM-DD"
+  const timeFirst = str.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(\d{4}-\d{2}-\d{2})$/);
+  if (timeFirst) {
+    const time = timeFirst[1].length === 5 ? timeFirst[1] + ':00' : timeFirst[1];
+    const d = new Date(`${timeFirst[2]}T${time}Z`);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  }
   const normalized = str.replace(' ', 'T');
   const d = new Date(normalized.endsWith('Z') ? normalized : normalized + 'Z');
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
@@ -81,7 +88,7 @@ export function parseBybit(text: string): ParsedTrade[] {
   return tradeRows.flatMap(row => {
     const symbol = addSlash(row['Market'] ?? '');
     const dir = (row['Direction'] ?? '').toLowerCase().trim();
-    if (!symbol || !['buy', 'sell'].includes(dir)) return [];
+    if (!symbol || !['buy', 'sell', 'long', 'short'].includes(dir)) return [];
     const entryPrice = parseFloat(row['Filled Price'] ?? '');
     const qty = parseFloat(row['Filled Quantity'] ?? '');
     // Trading Fee may be in scientific notation e.g. "5.5E-4" — Number() handles it
@@ -91,7 +98,7 @@ export function parseBybit(text: string): ParsedTrade[] {
     return [{
       symbol,
       market: 'crypto' as const,
-      direction: dir === 'buy' ? 'long' as const : 'short' as const,
+      direction: ['buy', 'long'].includes(dir) ? 'long' as const : 'short' as const,
       entry_price: entryPrice,
       exit_price: null,
       position_size: qty,

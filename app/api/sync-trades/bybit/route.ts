@@ -32,40 +32,69 @@ function addSlash(symbol: string): string {
   return symbol;
 }
 
-async function fetchBybitExecutions(apiKey: string, apiSecret: string): Promise<BybitExecution[]> {
+function buildHeaders(apiKey: string, apiSecret: string, queryString: string) {
   const timestamp = Date.now().toString();
   const recvWindow = '5000';
-  const queryString = 'category=linear&limit=100';
   // Bybit V5 GET signature: timestamp + apiKey + recvWindow + queryString
   const preSign = timestamp + apiKey + recvWindow + queryString;
   const signature = crypto.createHmac('sha256', apiSecret).update(preSign).digest('hex');
-
-  const response = await fetch(`https://api.bybit.com/v5/execution/list?${queryString}`, {
-    method: 'GET',
+  return {
+    timestamp,
     headers: {
       'X-BAPI-API-KEY': apiKey,
       'X-BAPI-TIMESTAMP': timestamp,
       'X-BAPI-SIGN': signature,
       'X-BAPI-RECV-WINDOW': recvWindow,
     },
-  });
+  };
+}
 
-  const text = await response.text();
-  console.log('[bybit-sync] HTTP status:', response.status);
-  console.log('[bybit-sync] Raw response (first 500):', text.substring(0, 500));
-
-  let data: { retCode: number; retMsg: string; result?: { list: BybitExecution[] } };
+async function tryFetch(baseUrl: string, apiKey: string, apiSecret: string, queryString: string): Promise<{ ok: boolean; text: string; status: number }> {
+  const { headers } = buildHeaders(apiKey, apiSecret, queryString);
   try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error('Invalid response from Bybit: ' + text.substring(0, 200));
+    const res = await fetch(`${baseUrl}/v5/execution/list?${queryString}`, { method: 'GET', headers });
+    const text = await res.text();
+    return { ok: res.status < 500, text, status: res.status };
+  } catch (err) {
+    return { ok: false, text: String(err), status: 0 };
+  }
+}
+
+async function fetchBybitExecutions(apiKey: string, apiSecret: string): Promise<BybitExecution[]> {
+  const queryString = 'category=linear&limit=100';
+
+  // Try api.bytick.com first (Bybit's globally accessible domain, not CloudFront-blocked)
+  // Fall back to api.bybit.nl if that fails
+  const candidates = ['https://api.bytick.com', 'https://api.bybit.nl', 'https://api.bybit.com'];
+  let lastError = '';
+
+  for (const base of candidates) {
+    const result = await tryFetch(base, apiKey, apiSecret, queryString);
+    console.log(`[bybit-sync] ${base} → HTTP ${result.status} | body(200): ${result.text.substring(0, 200)}`);
+
+    if (!result.ok) {
+      lastError = `${base} failed (${result.status}): ${result.text.substring(0, 100)}`;
+      continue;
+    }
+
+    let data: { retCode: number; retMsg: string; result?: { list: BybitExecution[] } };
+    try {
+      data = JSON.parse(result.text);
+    } catch {
+      lastError = `${base} returned non-JSON: ${result.text.substring(0, 100)}`;
+      continue;
+    }
+
+    if (data.retCode !== 0) {
+      // Auth errors are definitive — no point trying other domains
+      throw new Error(`Bybit API error (${data.retCode}): ${data.retMsg}`);
+    }
+
+    console.log(`[bybit-sync] Success via ${base}`);
+    return data.result?.list ?? [];
   }
 
-  if (data.retCode !== 0) {
-    throw new Error(`Bybit API error (${data.retCode}): ${data.retMsg}`);
-  }
-
-  return data.result?.list ?? [];
+  throw new Error(lastError || 'All Bybit API endpoints failed');
 }
 
 export async function POST() {
@@ -82,7 +111,6 @@ export async function POST() {
 
   if (!conn) return NextResponse.json({ error: 'Bybit not connected' }, { status: 404 });
 
-  // Trim credentials to remove any accidental whitespace
   const apiKey = conn.api_key.trim();
   const apiSecret = conn.api_secret.trim();
 
@@ -102,7 +130,6 @@ export async function POST() {
 
   console.log('[bybit-sync] Executions fetched:', executions.length);
 
-  // Group partial fills by orderId
   const byOrder: Record<string, OrderGroup> = {};
   for (const ex of executions) {
     if (!byOrder[ex.orderId]) {
@@ -138,10 +165,7 @@ export async function POST() {
   );
 
   const toInsert = Object.values(byOrder)
-    .filter(o => {
-      const key = `${o.symbol}|${o.price}|${o.time.slice(0, 16)}`;
-      return !existingKeys.has(key);
-    })
+    .filter(o => !existingKeys.has(`${o.symbol}|${o.price}|${o.time.slice(0, 16)}`))
     .map(o => ({
       user_id: user.id,
       symbol: o.symbol,
