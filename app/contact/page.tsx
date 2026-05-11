@@ -31,8 +31,8 @@ export default function ContactPage() {
             <Mail size={16} className="text-accent shrink-0" />
             <span className="text-sm text-text-muted">
               Or email us directly at{' '}
-              <a href="mailto:support@tradelog.xyz" className="text-accent hover:underline">
-                support@tradelog.xyz
+              <a href="mailto:support@tradelogpro.xyz" className="text-accent hover:underline">
+                support@tradelogpro.xyz
               </a>
             </span>
           </div>

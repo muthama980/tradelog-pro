@@ -45,7 +45,7 @@ export default function ProductShowcase() {
                     <div className="w-2.5 h-2.5 rounded-full bg-bg-elevated" />
                   </div>
                   <div className="font-mono text-[11px] tracking-wider text-text-dim ml-3">
-                    tradelog.xyz/dashboard
+                    tradelogpro.xyz/dashboard
                   </div>
                 </div>
 

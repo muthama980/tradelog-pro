@@ -40,7 +40,7 @@ export default function Footer() {
               <li><Link href="/contact" className="text-text-muted hover:text-accent transition">Contact</Link></li>
               <li><Link href="/login"   className="text-text-muted hover:text-accent transition">Sign in</Link></li>
               <li><Link href="/signup"  className="text-text-muted hover:text-accent transition">Start free trial</Link></li>
-              <li><a href="mailto:support@tradelog.xyz" className="text-text-muted hover:text-accent transition">support@tradelog.xyz</a></li>
+              <li><a href="mailto:support@tradelogpro.xyz" className="text-text-muted hover:text-accent transition">support@tradelogpro.xyz</a></li>
             </ul>
           </div>
         </div>
