@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// Map our plans → Lemon Squeezy variant IDs (set in your env)
-const VARIANT_IDS: Record<string, string | undefined> = {
-  core: process.env.LS_VARIANT_CORE,
-  pro:  process.env.LS_VARIANT_PRO,
-  prop: process.env.LS_VARIANT_PROP,
+const VARIANT_IDS: Record<string, string> = {
+  core: process.env.LS_VARIANT_CORE || '1595454',
+  pro:  process.env.LS_VARIANT_PRO  || '1595468',
+  prop: process.env.LS_VARIANT_PROP || '1595479',
 };
 
 export async function POST(req: NextRequest) {
@@ -16,23 +15,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
-    const variantId = VARIANT_IDS[plan];
-    if (!variantId) {
-      return NextResponse.json(
-        { error: `LS_VARIANT_${plan.toUpperCase()} env var not configured` },
-        { status: 500 }
-      );
-    }
-
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const apiKey = process.env.LEMON_SQUEEZY_API_KEY;
+    const apiKey  = process.env.LEMON_SQUEEZY_API_KEY;
     const storeId = process.env.LEMON_SQUEEZY_STORE_ID;
     if (!apiKey || !storeId) {
       return NextResponse.json({ error: 'Lemon Squeezy not configured' }, { status: 500 });
     }
+
+    const variantId = VARIANT_IDS[plan];
+    const siteUrl   = process.env.NEXT_PUBLIC_SITE_URL || 'https://tradelogpro.xyz';
 
     const res = await fetch('https://api.lemonsqueezy.com/v1/checkouts', {
       method: 'POST',
@@ -50,7 +44,7 @@ export async function POST(req: NextRequest) {
               custom: { user_id: user.id, plan },
             },
             product_options: {
-              redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?checkout=success`,
+              redirect_url: `${siteUrl}/dashboard?checkout=success`,
             },
           },
           relationships: {

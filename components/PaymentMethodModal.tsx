@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, CreditCard, Smartphone, Bitcoin, Loader2 } from 'lucide-react';
+import { X, CreditCard, Bitcoin, Loader2 } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -11,7 +11,6 @@ interface Props {
   planPrice: string;
 }
 
-// Simple PayPal "double-P" logo in brand colours
 function PayPalLogo() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -27,49 +26,44 @@ function PayPalLogo() {
   );
 }
 
+function LemonSqueezyLogo() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" fill="#FFD700" />
+      <text x="12" y="16" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#000">LS</text>
+    </svg>
+  );
+}
+
 type Method = {
   id: string;
   label: string;
   subtitle: string;
   renderIcon: () => React.ReactNode;
-  channels: string[];
+  endpoint: string;
 };
 
 const METHODS: Method[] = [
   {
     id: 'card',
     label: 'Card',
-    subtitle: 'Credit or debit card',
+    subtitle: 'Credit or debit card — powered by Lemon Squeezy',
     renderIcon: () => <CreditCard size={22} className="text-accent" strokeWidth={1.7} />,
-    channels: ['card'],
-  },
-  {
-    id: 'mpesa',
-    label: 'M-Pesa',
-    subtitle: 'Pay via M-Pesa mobile money',
-    renderIcon: () => <Smartphone size={22} className="text-accent" strokeWidth={1.7} />,
-    channels: ['mobile_money'],
-  },
-  {
-    id: 'airtel',
-    label: 'Airtel Money',
-    subtitle: 'Pay via Airtel Money',
-    renderIcon: () => <Smartphone size={22} className="text-accent" strokeWidth={1.7} />,
-    channels: ['mobile_money'],
+    endpoint: '/api/checkout',
   },
   {
     id: 'paypal',
     label: 'PayPal',
     subtitle: 'Pay with PayPal balance or linked card',
     renderIcon: () => <PayPalLogo />,
-    channels: [],
+    endpoint: '/api/checkout-paypal',
   },
   {
     id: 'crypto',
     label: 'Crypto',
-    subtitle: 'BTC, ETH, USDT, and 200+ more',
+    subtitle: 'BTC, ETH, USDT, and 200+ coins',
     renderIcon: () => <Bitcoin size={22} className="text-accent" strokeWidth={1.7} />,
-    channels: [],
+    endpoint: '/api/checkout-crypto',
   },
 ];
 
@@ -103,24 +97,10 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
     setError(null);
 
     try {
-      let endpoint: string;
-      let body: Record<string, unknown>;
-
-      if (method.id === 'crypto') {
-        endpoint = '/api/checkout-crypto';
-        body = { plan: planKey };
-      } else if (method.id === 'paypal') {
-        endpoint = '/api/checkout-paypal';
-        body = { plan: planKey };
-      } else {
-        endpoint = '/api/checkout-paystack';
-        body = { plan: planKey, channels: method.channels };
-      }
-
-      const res = await fetch(endpoint, {
+      const res = await fetch(method.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ plan: planKey }),
       });
 
       const data = await res.json();
@@ -196,7 +176,7 @@ export default function PaymentMethodModal({ isOpen, onClose, planKey, planName,
         </div>
 
         <p className="mt-6 mono-label text-center tracking-wider">
-          Secured by Paystack, PayPal & NOWPayments · Cancel anytime
+          Secured by Lemon Squeezy, PayPal & NOWPayments · Cancel anytime
         </p>
       </div>
     </div>
