@@ -14,7 +14,7 @@ interface Props {
 export default function UpgradeButton({
   planKey = 'pro',
   planName = 'Pro',
-  planPrice = 'KES 2,500',
+  planPrice = '$25',
   label = 'Upgrade now →',
   className = '',
 }: Props) {

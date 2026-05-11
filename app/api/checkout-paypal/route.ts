@@ -8,9 +8,9 @@ const PLAN_PRICES: Record<string, number> = {
 };
 
 function paypalBase() {
-  return process.env.PAYPAL_MODE === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+  return process.env.PAYPAL_MODE === 'sandbox'
+    ? 'https://api-m.sandbox.paypal.com'
+    : 'https://api-m.paypal.com';
 }
 
 async function getAccessToken(): Promise<string> {
