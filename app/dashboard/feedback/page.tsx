@@ -4,19 +4,6 @@ import { useState, useEffect } from 'react';
 import { Flag, CheckCircle, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-const SQL = `CREATE TABLE IF NOT EXISTS public.feedback (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
-  issue_type TEXT CHECK (issue_type IN ('bug', 'feature', 'downtime', 'other')),
-  description TEXT NOT NULL,
-  email TEXT,
-  status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved')),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "feedback_self_insert" ON public.feedback FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "feedback_self_select" ON public.feedback FOR SELECT USING (auth.uid() = user_id);`;
-
 export default function FeedbackPage() {
   const [email, setEmail] = useState('');
   const [issueType, setIssueType] = useState('bug');
@@ -65,16 +52,6 @@ export default function FeedbackPage() {
           Found a bug or have a feature request? We review every submission.
         </p>
       </div>
-
-      <details className="mb-8 group">
-        <summary className="cursor-pointer list-none flex items-center gap-2 mono-label hover:text-accent transition-colors select-none">
-          <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
-          Database setup SQL
-        </summary>
-        <div className="mt-3 p-4 rounded-xl bg-bg-elevated border border-border">
-          <pre className="text-xs text-text-muted leading-relaxed overflow-x-auto whitespace-pre font-mono">{SQL}</pre>
-        </div>
-      </details>
 
       {submitted ? (
         <div className="card rounded-xl p-12 text-center">
