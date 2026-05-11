@@ -47,7 +47,7 @@ export default async function SettingsPage() {
         )}
         <div className="pt-5 border-t border-border mt-2">
           <p className="text-sm text-text-muted mb-4 leading-relaxed">
-            Manage your subscription, switch plans, or upgrade via Paystack — card, M-Pesa, and Airtel Money accepted.
+            Manage your subscription, switch plans, or upgrade. Card payments are processed securely via Lemon Squeezy. PayPal and crypto also accepted.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/pricing" className="btn-secondary text-sm">Compare plans</Link>
@@ -56,7 +56,7 @@ export default async function SettingsPage() {
             )}
           </div>
           <p className="mt-5 mono-label tracking-wider">
-            Powered by Paystack · Card, M-Pesa & Airtel Money
+            Powered by Lemon Squeezy · Card, PayPal & Crypto · Cancel anytime
           </p>
         </div>
       </Section>
