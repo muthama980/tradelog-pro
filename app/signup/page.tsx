@@ -27,7 +27,7 @@ function SignupForm() {
       password,
       options: {
         data: { full_name: name, plan_intent: plan },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: 'https://tradelogpro.xyz/auth/callback',
       },
     });
     setLoading(false);
@@ -42,7 +42,7 @@ function SignupForm() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: 'https://tradelogpro.xyz/auth/callback',
         queryParams: {
           prompt: 'select_account',
           plan_intent: plan,

@@ -35,7 +35,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tradelogpro.xyz';
   const { searchParams } = req.nextUrl;
 
   // PayPal appends `token` (order ID) and `PayerID` to the return_url

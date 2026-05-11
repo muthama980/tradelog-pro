@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const reference = req.nextUrl.searchParams.get('reference');
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tradelogpro.xyz';
 
   if (!reference) {
     return NextResponse.redirect(`${siteUrl}/dashboard?checkout=failed`);
