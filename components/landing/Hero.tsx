@@ -172,7 +172,7 @@ export default function Hero() {
                 <div className="bg-bg-elevated border border-border rounded-md px-3 py-1 inline-flex items-center gap-2 w-56">
                   <div className="w-1.5 h-1.5 rounded-full bg-signal-green shrink-0" />
                   <span className="font-mono text-[10px] text-text-dim tracking-wider">
-                    tradelog.pro/dashboard
+                    tradelog.xyz/dashboard
                   </span>
                 </div>
               </div>

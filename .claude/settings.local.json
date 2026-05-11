@@ -5,7 +5,13 @@
       "Bash(npm install *)",
       "Bash(npm list *)",
       "Bash(npm uninstall *)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(npx next *)",
+      "Bash(npx vercel *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }

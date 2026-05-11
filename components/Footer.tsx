@@ -35,11 +35,12 @@ export default function Footer() {
           <div>
             <h4 className="mono-label mb-4">Company</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link href="/blog"    className="text-text-muted hover:text-accent transition">Blog</Link></li>
+              <li><Link href="/blog"     className="text-text-muted hover:text-accent transition">Blog</Link></li>
               <li><Link href="/quotes"  className="text-text-muted hover:text-accent transition">Daily Edge</Link></li>
+              <li><Link href="/contact" className="text-text-muted hover:text-accent transition">Contact</Link></li>
               <li><Link href="/login"   className="text-text-muted hover:text-accent transition">Sign in</Link></li>
               <li><Link href="/signup"  className="text-text-muted hover:text-accent transition">Start free trial</Link></li>
-              <li><a href="mailto:hello@tradelog.pro" className="text-text-muted hover:text-accent transition">Contact</a></li>
+              <li><a href="mailto:support@tradelog.xyz" className="text-text-muted hover:text-accent transition">support@tradelog.xyz</a></li>
             </ul>
           </div>
         </div>

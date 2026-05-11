@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import DailyQuote from '@/components/DailyQuote';
 import OverviewChart from '@/components/dashboard/OverviewChart';
@@ -22,6 +22,12 @@ export default async function DashboardPage() {
     .eq('user_id', user!.id)
     .order('opened_at', { ascending: false });
 
+  const { data: connections } = await supabase
+    .from('exchange_connections')
+    .select('id')
+    .eq('user_id', user!.id)
+    .limit(1);
+
   const closed   = (trades || []).filter((t: any) => t.status === 'closed');
   const wins     = closed.filter((t: any) => Number(t.pnl) > 0);
   const totalPnl = closed.reduce((s: number, t: any) => s + Number(t.pnl || 0), 0);
@@ -43,6 +49,8 @@ export default async function DashboardPage() {
   const firstName = displayName.split(' ')[0];
 
   const plan = profile?.plan || 'trial';
+  const hasTrades = (trades || []).length > 0;
+  const hasConnection = (connections || []).length > 0;
 
   return (
     <div className="p-8 md:p-10 max-w-7xl">
@@ -57,19 +65,24 @@ export default async function DashboardPage() {
               Welcome back, <span className="text-accent">{firstName}</span>.
             </h1>
             <PlanBadge plan={plan} trialDays={trialDays} />
+            {(plan === 'trial' || plan === 'cancelled') && (
+              <UpgradeButton
+                className="font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
+                label="Upgrade →"
+              />
+            )}
           </div>
-          {plan === 'trial' && (
-            <UpgradeButton
-              className="mt-2 font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
-              label="Upgrade now →"
-            />
-          )}
         </div>
         <Link href="/dashboard/journal" className="btn-primary">
           <Plus size={15} className="mr-2" />
           Log Trade
         </Link>
       </div>
+
+      {/* Getting Started card */}
+      {!(hasTrades && hasConnection) && (
+        <GettingStartedCard hasTrades={hasTrades} hasConnection={hasConnection} />
+      )}
 
       {/* Daily risk status */}
       <RiskStatus />
@@ -172,6 +185,81 @@ export default async function DashboardPage() {
             </tbody>
           </table>
         )}
+      </div>
+    </div>
+  );
+}
+
+function GettingStartedCard({ hasTrades, hasConnection }: { hasTrades: boolean; hasConnection: boolean }) {
+  const steps = [
+    {
+      num: 1,
+      title: 'Log your first trade',
+      desc: 'Record your first trade to start tracking performance.',
+      href: '/dashboard/journal',
+      done: hasTrades,
+    },
+    {
+      num: 2,
+      title: 'Connect an exchange',
+      desc: 'Auto-sync trades from Binance, Coinbase, Kraken, or OKX.',
+      href: '/dashboard/connections',
+      done: hasConnection,
+    },
+    {
+      num: 3,
+      title: 'Check your analytics',
+      desc: 'See your win rate, P&L curve, and key metrics.',
+      href: '/dashboard/analytics',
+      done: hasTrades,
+    },
+    {
+      num: 4,
+      title: 'Explore AI Coach',
+      desc: 'Get AI-powered feedback on your trading patterns.',
+      href: '/dashboard/coach',
+      done: false,
+    },
+  ];
+
+  return (
+    <div className="card rounded-xl p-6 mb-8 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-bold text-base text-text">Getting Started</h3>
+        <span className="font-mono text-[10px] tracking-widest text-text-dim uppercase">
+          {steps.filter(s => s.done).length}/{steps.length} complete
+        </span>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {steps.map(step => (
+          <Link
+            key={step.num}
+            href={step.href}
+            className={`group flex items-start gap-3 p-4 rounded-lg border transition-colors ${
+              step.done
+                ? 'border-signal-green/20 bg-signal-green/5'
+                : 'border-border hover:border-accent/30 hover:bg-bg-elevated'
+            }`}
+          >
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+              step.done ? 'text-signal-green' : 'border border-border text-text-dim'
+            }`}>
+              {step.done
+                ? <CheckCircle2 size={18} strokeWidth={1.7} />
+                : <span className="font-mono text-[11px]">{step.num}</span>
+              }
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-semibold mb-0.5 ${step.done ? 'text-text-muted line-through' : 'text-text'}`}>
+                {step.title}
+              </p>
+              <p className="text-xs text-text-dim leading-relaxed">{step.desc}</p>
+            </div>
+            {!step.done && (
+              <ArrowRight size={14} className="text-text-dim group-hover:text-accent shrink-0 mt-1 transition-colors" />
+            )}
+          </Link>
+        ))}
       </div>
     </div>
   );

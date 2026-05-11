@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -102,10 +102,26 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
         <Link
           href="/dashboard/settings"
           onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-text hover:bg-bg-elevated transition-colors"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+            pathname === '/dashboard/settings'
+              ? 'bg-accent/10 text-accent border-l-2 border-accent'
+              : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+          }`}
         >
           <Settings size={15} strokeWidth={1.7} />
           Settings
+        </Link>
+        <Link
+          href="/dashboard/feedback"
+          onClick={onClose}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+            pathname === '/dashboard/feedback'
+              ? 'bg-accent/10 text-accent border-l-2 border-accent'
+              : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+          }`}
+        >
+          <Flag size={15} strokeWidth={1.7} />
+          Report Issue
         </Link>
         <button
           onClick={signOut}
