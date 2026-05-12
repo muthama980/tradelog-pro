@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowRight, Mail, Lock, User, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Mail, Lock, User } from 'lucide-react';
 
 function SignupForm() {
   const router = useRouter();
@@ -16,29 +16,65 @@ function SignupForm() {
   const [password, setPassword] = useState('');
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({
+    setLoadingStep('Creating your account…');
+
+    // Step 1: Create the account
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name, plan_intent: plan, email_opt_in: emailOptIn },
-        emailRedirectTo: 'https://tradelogpro.xyz/auth/callback',
       },
     });
-    setLoading(false);
-    if (error) { setError(error.message); return; }
-    setDone(true);
-    // Do NOT auto-redirect — user must confirm email first
+
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    setLoadingStep('Setting up your dashboard…');
+
+    // Step 2: Immediately sign in (requires email confirmation disabled in Supabase dashboard)
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Step 3: Set up trial profile
+    const userId = signInData.user.id;
+    const trialEndsAt = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString();
+
+    await supabase.from('profiles').upsert({
+      id: userId,
+      full_name: name,
+      email: email,
+      plan: 'trial',
+      trial_ends_at: trialEndsAt,
+      email_opt_in: emailOptIn,
+    }, { onConflict: 'id' });
+
+    // Step 4: Persist session so SessionGuard doesn't sign the user out
+    localStorage.setItem('tlp_remember', 'true');
+
+    // Step 5: Enter the app
+    router.push('/dashboard');
+    router.refresh();
   }
 
-  // Google OAuth — requires: Supabase Dashboard → Authentication → Providers → Google (enable + add Client ID/Secret)
-  // and Google Cloud Console → OAuth 2.0 credentials with this origin + /auth/callback as authorised redirect URI.
   async function signupWithGoogle() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -50,25 +86,6 @@ function SignupForm() {
         },
       },
     });
-  }
-
-  if (done) {
-    return (
-      <div className="text-center py-12">
-        <CheckCircle2 className="text-accent mx-auto mb-5" size={40} strokeWidth={1.5} />
-        <h2 className="font-bold text-2xl text-text mb-3">Check your email.</h2>
-        <p className="text-text-muted leading-relaxed">
-          Check your email to confirm your account.
-          Once confirmed, you can sign in.
-        </p>
-        <Link
-          href="/login"
-          className="inline-block mt-6 font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
-        >
-          Back to sign in →
-        </Link>
-      </div>
-    );
   }
 
   return (
@@ -83,7 +100,8 @@ function SignupForm() {
 
       <button
         onClick={signupWithGoogle}
-        className="w-full py-2.5 px-4 border border-border-strong hover:border-accent/40 rounded-lg flex items-center justify-center gap-3 text-sm text-text-muted hover:text-text transition mb-5 bg-bg-elevated"
+        disabled={loading}
+        className="w-full py-2.5 px-4 border border-border-strong hover:border-accent/40 rounded-lg flex items-center justify-center gap-3 text-sm text-text-muted hover:text-text transition mb-5 bg-bg-elevated disabled:opacity-50"
       >
         <svg width="16" height="16" viewBox="0 0 18 18">
           <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.657 14.013 17.64 11.705 17.64 9.2z"/>
@@ -113,7 +131,8 @@ function SignupForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition"
+              disabled={loading}
+              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition disabled:opacity-60"
               placeholder="Jane Trader"
             />
           </div>
@@ -128,7 +147,8 @@ function SignupForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition"
+              disabled={loading}
+              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition disabled:opacity-60"
               placeholder="you@trader.com"
             />
           </div>
@@ -144,7 +164,8 @@ function SignupForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition"
+              disabled={loading}
+              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition disabled:opacity-60"
               placeholder="At least 8 characters"
             />
           </div>
@@ -156,6 +177,7 @@ function SignupForm() {
             id="email_opt_in"
             checked={emailOptIn}
             onChange={(e) => setEmailOptIn(e.target.checked)}
+            disabled={loading}
             className="mt-0.5 accent-[#00D9FF] cursor-pointer"
           />
           <label htmlFor="email_opt_in" className="text-sm text-text-muted cursor-pointer leading-relaxed select-none">
@@ -170,7 +192,9 @@ function SignupForm() {
         )}
 
         <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
-          {loading ? 'Creating your trial…' : <><span>Begin 4-day trial</span><ArrowRight size={15} className="ml-2" /></>}
+          {loading
+            ? loadingStep
+            : <><span>Begin 4-day trial</span><ArrowRight size={15} className="ml-2" /></>}
         </button>
       </form>
 

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy, CheckCircle2, Circle, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import DailyQuote from '@/components/DailyQuote';
 import OverviewChart from '@/components/dashboard/OverviewChart';
@@ -78,6 +78,29 @@ export default async function DashboardPage() {
           Log Trade
         </Link>
       </div>
+
+      {/* Trial expiry warning banner */}
+      {plan === 'trial' && trialDays <= 1 && (
+        <div className={`mb-6 flex items-center justify-between gap-4 px-5 py-3.5 rounded-xl border ${
+          trialDays === 0
+            ? 'border-signal-red/40 bg-signal-red/5'
+            : 'border-amber-500/30 bg-amber-500/5'
+        }`}>
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={15} className={trialDays === 0 ? 'text-signal-red shrink-0' : 'text-amber-400 shrink-0'} />
+            <p className={`text-sm ${trialDays === 0 ? 'text-signal-red' : 'text-amber-400'}`}>
+              {trialDays === 0
+                ? 'Your free trial ends today.'
+                : 'Your free trial ends tomorrow.'}
+              {' '}Upgrade now to keep your data and access.
+            </p>
+          </div>
+          <UpgradeButton
+            className="shrink-0 font-mono text-[11px] tracking-widest uppercase text-accent hover:underline underline-offset-4 transition whitespace-nowrap"
+            label="Upgrade →"
+          />
+        </div>
+      )}
 
       {/* Getting Started card */}
       {!(hasTrades && hasConnection) && (
@@ -267,9 +290,19 @@ function GettingStartedCard({ hasTrades, hasConnection }: { hasTrades: boolean; 
 
 function PlanBadge({ plan, trialDays }: { plan: string; trialDays: number }) {
   if (plan === 'trial') {
+    const isUrgent  = trialDays === 0;
+    const isWarning = trialDays === 1;
+    const label = isUrgent
+      ? 'TRIAL ENDS TODAY'
+      : `FREE TRIAL · ${trialDays}d left`;
+    const cls = isUrgent
+      ? 'border-signal-red/40 bg-signal-red/5 text-signal-red'
+      : isWarning
+      ? 'border-amber-500/30 bg-amber-500/5 text-amber-400'
+      : 'border-border bg-bg-elevated text-text-dim';
     return (
-      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-border bg-bg-elevated text-text-dim">
-        FREE TRIAL · {trialDays}d left
+      <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border ${cls}`}>
+        {label}
       </span>
     );
   }
