@@ -63,6 +63,7 @@ function SignupForm() {
       full_name: name,
       email: email,
       plan: 'trial',
+      plan_intent: plan || 'pro',
       trial_ends_at: trialEndsAt,
       email_opt_in: emailOptIn,
     }, { onConflict: 'id' });

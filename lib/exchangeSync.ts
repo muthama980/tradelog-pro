@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { decrypt } from './encryption';
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
@@ -97,8 +98,11 @@ export async function syncBinance(supabase: SupabaseClient<any>, userId: string)
     .eq('user_id', userId).eq('exchange', 'binance').single();
   if (!conn) return { imported: 0, error: 'Binance not connected' };
 
+  const apiKey = decrypt(conn.api_key);
+  const apiSecret = decrypt(conn.api_secret);
+
   const infoRes = await fetch('https://api.binance.com/api/v3/exchangeInfo', {
-    headers: { 'X-MBX-APIKEY': conn.api_key },
+    headers: { 'X-MBX-APIKEY': apiKey },
   });
   if (!infoRes.ok) {
     const msg = 'Binance exchangeInfo failed';
@@ -110,7 +114,7 @@ export async function syncBinance(supabase: SupabaseClient<any>, userId: string)
     .filter(s => s.status === 'TRADING' && s.symbol.endsWith('USDT'))
     .slice(0, 20).map(s => s.symbol);
 
-  const all = (await Promise.all(symbols.map(s => fetchBinanceSymbolTrades(conn.api_key, conn.api_secret, s)))).flat();
+  const all = (await Promise.all(symbols.map(s => fetchBinanceSymbolTrades(apiKey, apiSecret, s)))).flat();
 
   const trades: TradeInsert[] = all.map(t => ({
     user_id: userId,
@@ -150,13 +154,16 @@ export async function syncCoinbase(supabase: SupabaseClient<any>, userId: string
     .eq('user_id', userId).eq('exchange', 'coinbase').single();
   if (!conn) return { imported: 0, error: 'Coinbase not connected' };
 
+  const apiKey = decrypt(conn.api_key);
+  const apiSecret = decrypt(conn.api_secret);
+
   const ts = Math.floor(Date.now() / 1000).toString();
   const path = '/api/v3/brokerage/orders/historical/fills';
-  const sign = coinbaseSign(ts, 'GET', path, '', conn.api_secret);
+  const sign = coinbaseSign(ts, 'GET', path, '', apiSecret);
 
   const res = await fetch(`https://api.coinbase.com${path}`, {
     headers: {
-      'CB-ACCESS-KEY': conn.api_key,
+      'CB-ACCESS-KEY': apiKey,
       'CB-ACCESS-SIGN': sign,
       'CB-ACCESS-TIMESTAMP': ts,
       'Content-Type': 'application/json',
@@ -226,15 +233,18 @@ export async function syncKraken(supabase: SupabaseClient<any>, userId: string):
     .eq('user_id', userId).eq('exchange', 'kraken').single();
   if (!conn) return { imported: 0, error: 'Kraken not connected' };
 
+  const apiKey = decrypt(conn.api_key);
+  const apiSecret = decrypt(conn.api_secret);
+
   const path = '/0/private/TradesHistory';
   const nonce = Date.now().toString();
   const postData = `nonce=${nonce}`;
-  const sign = krakenSign(path, nonce, postData, conn.api_secret);
+  const sign = krakenSign(path, nonce, postData, apiSecret);
 
   const res = await fetch(`https://api.kraken.com${path}`, {
     method: 'POST',
     headers: {
-      'API-Key': conn.api_key,
+      'API-Key': apiKey,
       'API-Sign': sign,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
@@ -293,16 +303,20 @@ export async function syncOKX(supabase: SupabaseClient<any>, userId: string): Pr
     .eq('user_id', userId).eq('exchange', 'okx').single();
   if (!conn) return { imported: 0, error: 'OKX not connected' };
 
+  const apiKey = decrypt(conn.api_key);
+  const apiSecret = decrypt(conn.api_secret);
+  const apiPassphrase = conn.api_passphrase ? decrypt(conn.api_passphrase) : '';
+
   const ts = new Date().toISOString();
   const path = '/api/v5/trade/fills-history?instType=SPOT';
-  const sign = okxSign(ts, 'GET', path, '', conn.api_secret);
+  const sign = okxSign(ts, 'GET', path, '', apiSecret);
 
   const res = await fetch(`https://www.okx.com${path}`, {
     headers: {
-      'OK-ACCESS-KEY': conn.api_key,
+      'OK-ACCESS-KEY': apiKey,
       'OK-ACCESS-SIGN': sign,
       'OK-ACCESS-TIMESTAMP': ts,
-      'OK-ACCESS-PASSPHRASE': conn.api_passphrase ?? '',
+      'OK-ACCESS-PASSPHRASE': apiPassphrase,
     },
   });
 

@@ -22,6 +22,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(true);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [cooldownEnd, setCooldownEnd] = useState<number | null>(null);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
 
   // Forgot password state
   const [resetEmail, setResetEmail] = useState('');
@@ -32,6 +35,20 @@ export default function LoginPage() {
     const saved = localStorage.getItem(CHECKBOX_KEY);
     if (saved !== null) setRememberMe(saved === 'true');
   }, []);
+
+  useEffect(() => {
+    if (!cooldownEnd) return;
+    const interval = setInterval(() => {
+      const left = Math.max(0, Math.ceil((cooldownEnd - Date.now()) / 1000));
+      setCooldownLeft(left);
+      if (left === 0) {
+        setCooldownEnd(null);
+        setFailedAttempts(0);
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownEnd]);
 
   function handleRememberChange(checked: boolean) {
     setRememberMe(checked);
@@ -46,14 +63,25 @@ export default function LoginPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (cooldownEnd && Date.now() < cooldownEnd) return;
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      const next = failedAttempts + 1;
+      setFailedAttempts(next);
+      if (next >= 5) {
+        setCooldownEnd(Date.now() + 30000);
+        setCooldownLeft(30);
+        setError('Too many failed attempts. Please wait 30 seconds.');
+      } else {
+        setError(error.message);
+      }
       return;
     }
+    setFailedAttempts(0);
+    setCooldownEnd(null);
     if (rememberMe) {
       localStorage.setItem('tlp_remember', 'true');
       sessionStorage.removeItem('tlp_session_active');
@@ -263,8 +291,16 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
-                  {loading ? 'Signing in…' : <><span>Sign in</span><ArrowRight size={15} className="ml-2" /></>}
+                <button
+                  type="submit"
+                  disabled={loading || (cooldownEnd !== null && cooldownLeft > 0)}
+                  className="btn-primary w-full justify-center disabled:opacity-60"
+                >
+                  {loading
+                    ? 'Signing in…'
+                    : (cooldownEnd !== null && cooldownLeft > 0)
+                    ? `Wait ${cooldownLeft}s`
+                    : <><span>Sign in</span><ArrowRight size={15} className="ml-2" /></>}
                 </button>
               </form>
 

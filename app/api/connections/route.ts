@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { encrypt } from '@/lib/encryption';
+import { rateLimit } from '@/lib/rateLimit';
 
 const SUPPORTED_EXCHANGES = ['binance', 'coinbase', 'kraken', 'okx', 'oanda', 'alpaca'] as const;
 
 export async function GET() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { data, error } = await supabase
     .from('exchange_connections')
@@ -18,9 +20,14 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') || 'unknown';
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  if (!rateLimit(`${user.id}:connections`, 10)) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+  }
 
   const body = await req.json();
   const { exchange, api_key, api_secret, api_passphrase } = body as {
@@ -43,12 +50,12 @@ export async function POST(req: NextRequest) {
   const record: Record<string, unknown> = {
     user_id: user.id,
     exchange,
-    api_key,
-    api_secret,
+    api_key: encrypt(api_key),
+    api_secret: encrypt(api_secret),
     status: 'active',
     error_message: null,
   };
-  if (api_passphrase) record.api_passphrase = api_passphrase;
+  if (api_passphrase) record.api_passphrase = encrypt(api_passphrase);
 
   const { error } = await supabase
     .from('exchange_connections')
@@ -61,7 +68,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { exchange } = await req.json();
   if (!exchange) return NextResponse.json({ error: 'exchange is required' }, { status: 400 });

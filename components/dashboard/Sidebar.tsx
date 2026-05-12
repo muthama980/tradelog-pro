@@ -32,12 +32,14 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
   const router = useRouter();
   const supabase = createClient();
   const [plan, setPlan] = useState<string | null>(null);
+  const [planIntent, setPlanIntent] = useState<string>('pro');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      supabase.from('profiles').select('plan').eq('id', user.id).single().then(({ data }) => {
+      supabase.from('profiles').select('plan, plan_intent').eq('id', user.id).single().then(({ data }) => {
         if (data?.plan) setPlan(data.plan);
+        if (data?.plan_intent) setPlanIntent(data.plan_intent);
       });
     });
   }, []);
@@ -95,7 +97,9 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
             <span className={`font-mono text-[10px] tracking-widest uppercase ${
               plan === 'cancelled' ? 'text-signal-red' : plan === 'trial' ? 'text-text-dim' : 'text-accent'
             }`}>
-              {PLAN_LABELS[plan] ?? plan}
+              {plan === 'trial'
+                ? `Trial · ${planIntent === 'core' ? 'Core' : 'Pro'}`
+                : (PLAN_LABELS[plan] ?? plan)}
             </span>
           </div>
         )}

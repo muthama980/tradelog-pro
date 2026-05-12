@@ -40,6 +40,8 @@ export default async function DashboardPage() {
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at).getTime() - Date.now()) / 86400000))
     : 0;
 
+  const planIntent: string = profile?.plan_intent || 'pro';
+
   const displayName =
     profile?.full_name ||
     user!.user_metadata?.full_name ||
@@ -64,7 +66,7 @@ export default async function DashboardPage() {
             <h1 className="text-3xl font-bold text-text tracking-tight">
               Welcome back, <span className="text-accent">{firstName}</span>.
             </h1>
-            <PlanBadge plan={plan} trialDays={trialDays} />
+            <PlanBadge plan={plan} trialDays={trialDays} planIntent={planIntent} />
             {(plan === 'trial' || plan === 'cancelled') && (
               <UpgradeButton
                 className="font-mono text-[11px] tracking-widest text-accent uppercase hover:underline underline-offset-4 transition"
@@ -288,13 +290,14 @@ function GettingStartedCard({ hasTrades, hasConnection }: { hasTrades: boolean; 
   );
 }
 
-function PlanBadge({ plan, trialDays }: { plan: string; trialDays: number }) {
+function PlanBadge({ plan, trialDays, planIntent }: { plan: string; trialDays: number; planIntent?: string }) {
   if (plan === 'trial') {
     const isUrgent  = trialDays === 0;
     const isWarning = trialDays === 1;
+    const tier = (planIntent === 'core' ? 'Core' : 'Pro').toUpperCase();
     const label = isUrgent
       ? 'TRIAL ENDS TODAY'
-      : `FREE TRIAL · ${trialDays}d left`;
+      : `FREE TRIAL · ${tier} · ${trialDays}d left`;
     const cls = isUrgent
       ? 'border-signal-red/40 bg-signal-red/5 text-signal-red'
       : isWarning

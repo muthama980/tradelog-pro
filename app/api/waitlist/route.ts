@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit } from '@/lib/rateLimit';
 
 function adminClient() {
   return createClient(
@@ -10,6 +11,11 @@ function adminClient() {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  if (!rateLimit(`${ip}:waitlist`, 5)) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+  }
+
   try {
     const { email, feature = 'elite' } = await req.json();
     if (!email || typeof email !== 'string' || !email.includes('@')) {

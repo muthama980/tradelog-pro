@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/rateLimit';
 
 const VARIANT_IDS: Record<string, string> = {
   core: process.env.LS_VARIANT_CORE || '1595454',
@@ -17,7 +18,11 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    if (!rateLimit(`${user.id}:checkout`, 10)) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+    }
 
     const apiKey  = process.env.LEMON_SQUEEZY_API_KEY;
     const storeId = process.env.LEMON_SQUEEZY_STORE_ID;
