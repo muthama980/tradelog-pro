@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, X, Loader2, Pencil, ChevronDown } from 'lucide-react';
+import { Plus, X, Loader2, Pencil, ChevronDown, Trash2, AlertTriangle } from 'lucide-react';
 import { computePnl } from '@/lib/utils';
 
 // ─── Strategy presets ────────────────────────────────────────────────────────
@@ -26,24 +26,42 @@ const MISTAKE_OPTIONS = [
 
 const MARKETS = ['crypto','forex','stocks','futures','other'];
 
+// ─── Trading sessions ────────────────────────────────────────────────────────
+const TRADING_SESSIONS = [
+  { value: 'asian',                    label: 'Asian (Tokyo)' },
+  { value: 'european',                 label: 'European (London)' },
+  { value: 'american',                 label: 'American (New York)' },
+  { value: 'pacific',                  label: 'Pacific (Sydney)' },
+  { value: 'asia-europe-overlap',      label: 'Overlap: Asia – Europe' },
+  { value: 'europe-america-overlap',   label: 'Overlap: Europe – America' },
+];
+
+const SESSION_MARKETS = ['forex', 'futures'];
+
 const BLANK_FORM = {
   symbol: '', market: 'crypto', direction: 'long',
   entry_price: '', exit_price: '', position_size: '', fees: '',
   strategy: '', emotion: '', notes: '',
   opened_at: new Date().toISOString().slice(0, 16),
+  trading_session: '',
 };
 
 export default function JournalPage() {
   const supabase = createClient();
-  const [trades, setTrades]       = useState<any[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [showForm, setShowForm]   = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm]           = useState({ ...BLANK_FORM });
-  const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
-  const [customStrategy, setCustomStrategy]     = useState('');
-  const [showCustomStrategy, setShowCustomStrategy] = useState(false);
+  const [trades, setTrades]             = useState<any[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [showForm, setShowForm]         = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
+  const [editingId, setEditingId]       = useState<string | null>(null);
+  const [form, setForm]                 = useState({ ...BLANK_FORM });
+  const [selectedMistakes, setSelectedMistakes]         = useState<string[]>([]);
+  const [customStrategy, setCustomStrategy]             = useState('');
+  const [showCustomStrategy, setShowCustomStrategy]     = useState(false);
+
+  // Bulk delete state
+  const [selectedIds, setSelectedIds]     = useState<string[]>([]);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting]   = useState(false);
 
   async function load() {
     setLoading(true);
@@ -69,17 +87,18 @@ export default function JournalPage() {
     setShowCustomStrategy(!isPreset && !!trade.strategy);
     setCustomStrategy(!isPreset ? (trade.strategy || '') : '');
     setForm({
-      symbol:        trade.symbol,
-      market:        trade.market,
-      direction:     trade.direction,
-      entry_price:   String(trade.entry_price),
-      exit_price:    trade.exit_price ? String(trade.exit_price) : '',
-      position_size: String(trade.position_size),
-      fees:          trade.fees ? String(trade.fees) : '',
-      strategy:      isPreset ? trade.strategy : '__custom__',
-      emotion:       trade.emotion || '',
-      notes:         trade.notes || '',
-      opened_at:     new Date(trade.opened_at).toISOString().slice(0, 16),
+      symbol:           trade.symbol,
+      market:           trade.market,
+      direction:        trade.direction,
+      entry_price:      String(trade.entry_price),
+      exit_price:       trade.exit_price ? String(trade.exit_price) : '',
+      position_size:    String(trade.position_size),
+      fees:             trade.fees ? String(trade.fees) : '',
+      strategy:         isPreset ? trade.strategy : '__custom__',
+      emotion:          trade.emotion || '',
+      notes:            trade.notes || '',
+      opened_at:        new Date(trade.opened_at).toISOString().slice(0, 16),
+      trading_session:  trade.trading_session || '',
     });
     setSelectedMistakes(Array.isArray(trade.mistakes) ? trade.mistakes : []);
     setShowForm(true);
@@ -96,6 +115,27 @@ export default function JournalPage() {
     );
   }
 
+  // ── Selection helpers ──────────────────────────────────────────────────────
+  const allSelected = trades.length > 0 && trades.every(t => selectedIds.includes(t.id));
+
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? [] : trades.map(t => t.id));
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  async function bulkDelete() {
+    if (selectedIds.length === 0) return;
+    setBulkDeleting(true);
+    await supabase.from('trades').delete().in('id', selectedIds);
+    setSelectedIds([]);
+    setShowBulkConfirm(false);
+    setBulkDeleting(false);
+    load();
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -108,21 +148,22 @@ export default function JournalPage() {
     const strategy = form.strategy === '__custom__' ? (customStrategy.trim() || null) : (form.strategy || null);
 
     const payload = {
-      symbol:        form.symbol.toUpperCase(),
-      market:        form.market,
-      direction:     form.direction,
-      entry_price:   entry,
-      exit_price:    exit,
-      position_size: size,
+      symbol:           form.symbol.toUpperCase(),
+      market:           form.market,
+      direction:        form.direction,
+      entry_price:      entry,
+      exit_price:       exit,
+      position_size:    size,
       fees,
       pnl,
       strategy,
-      emotion:       form.emotion || null,
-      notes:         form.notes || null,
-      mistakes:      selectedMistakes.length > 0 ? selectedMistakes : null,
-      opened_at:     new Date(form.opened_at).toISOString(),
-      closed_at:     exit ? new Date().toISOString() : null,
-      status:        exit ? 'closed' : 'open',
+      emotion:          form.emotion || null,
+      notes:            form.notes || null,
+      mistakes:         selectedMistakes.length > 0 ? selectedMistakes : null,
+      opened_at:        new Date(form.opened_at).toISOString(),
+      closed_at:        exit ? new Date().toISOString() : null,
+      status:           exit ? 'closed' : 'open',
+      trading_session:  SESSION_MARKETS.includes(form.market) && form.trading_session ? form.trading_session : null,
     };
 
     let error: any = null;
@@ -158,7 +199,7 @@ export default function JournalPage() {
         </button>
       </div>
 
-      {/* ── Form modal ─────────────────────────────────────────────────── */}
+      {/* ── Trade log form modal ──────────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 z-50 bg-bg/80 backdrop-blur-sm flex items-start justify-center p-4 md:p-12 overflow-y-auto">
           <div className="card rounded-xl w-full max-w-2xl p-8 my-8 relative">
@@ -180,12 +221,31 @@ export default function JournalPage() {
                 </Field>
                 <Field label="Market">
                   <select value={form.market}
-                    onChange={(e) => setForm({ ...form, market: e.target.value })}
+                    onChange={(e) => setForm({ ...form, market: e.target.value, trading_session: '' })}
                     className="form-input capitalize">
                     {MARKETS.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </Field>
               </div>
+
+              {/* Trading Session — only for forex / futures */}
+              {SESSION_MARKETS.includes(form.market) && (
+                <Field label="Trading Session (optional)">
+                  <div className="relative">
+                    <select
+                      value={form.trading_session}
+                      onChange={(e) => setForm({ ...form, trading_session: e.target.value })}
+                      className="form-input appearance-none pr-8"
+                    >
+                      <option value="">— select session —</option>
+                      {TRADING_SESSIONS.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
+                  </div>
+                </Field>
+              )}
 
               {/* Direction + Entry + Exit */}
               <div className="grid md:grid-cols-3 gap-4">
@@ -223,7 +283,7 @@ export default function JournalPage() {
                 </Field>
               </div>
 
-              {/* Strategy — searchable select + custom */}
+              {/* Strategy */}
               <Field label="Strategy">
                 <div className="relative">
                   <select
@@ -260,7 +320,7 @@ export default function JournalPage() {
                 )}
               </Field>
 
-              {/* Emotion — categorized pills */}
+              {/* Emotion */}
               <Field label="Emotion">
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-1.5">
@@ -299,7 +359,7 @@ export default function JournalPage() {
                 </div>
               </Field>
 
-              {/* Mistakes — multi-select pills */}
+              {/* Mistakes */}
               <Field label="Mistakes (select all that apply)">
                 <div className="flex flex-wrap gap-1.5">
                   {MISTAKE_OPTIONS.map(m => {
@@ -347,6 +407,40 @@ export default function JournalPage() {
         </div>
       )}
 
+      {/* ── Bulk delete confirmation modal ───────────────────────────────── */}
+      {showBulkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowBulkConfirm(false)} />
+          <div className="relative card rounded-xl p-8 max-w-sm w-full border-signal-red/20">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-lg border border-signal-red/30 bg-signal-red/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="text-signal-red" size={16} />
+              </div>
+              <h3 className="font-bold text-text text-lg">Delete {selectedIds.length} {selectedIds.length === 1 ? 'trade' : 'trades'}?</h3>
+            </div>
+            <p className="text-text-muted text-sm leading-relaxed mb-6">
+              This will permanently delete {selectedIds.length} selected {selectedIds.length === 1 ? 'trade' : 'trades'}. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowBulkConfirm(false)}
+                className="btn-secondary flex-1 justify-center"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={bulkDelete}
+                disabled={bulkDeleting}
+                className="flex-1 justify-center flex items-center gap-2 px-4 py-2.5 rounded-lg font-mono text-[11px] tracking-widest uppercase bg-signal-red text-white hover:bg-signal-red/90 transition disabled:opacity-60"
+              >
+                {bulkDeleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Trade list ──────────────────────────────────────────────────── */}
       <div className="card rounded-xl overflow-hidden">
         {loading ? (
@@ -361,9 +455,18 @@ export default function JournalPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase border-b border-border bg-bg-elevated">
+                  <th className="p-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleSelectAll}
+                      className="accent-[#00D9FF] cursor-pointer"
+                      title="Select all"
+                    />
+                  </th>
                   <th className="text-left p-4">Symbol</th>
                   <th className="text-left p-4 hidden lg:table-cell">Dir</th>
                   <th className="text-left p-4 hidden md:table-cell">Strategy</th>
@@ -374,67 +477,106 @@ export default function JournalPage() {
                 </tr>
               </thead>
               <tbody>
-                {trades.map((t) => (
-                  <tr key={t.id} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-mono text-sm text-text">{t.symbol}</div>
-                      <div className="font-mono text-[10px] text-text-dim uppercase tracking-wider">{t.market}</div>
-                      {t.mistakes && t.mistakes.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {t.mistakes.slice(0, 2).map((m: string) => (
-                            <span key={m} className="font-mono text-[9px] uppercase tracking-wider text-signal-red/70 border border-signal-red/20 px-1.5 py-px rounded">
-                              {m}
-                            </span>
-                          ))}
-                          {t.mistakes.length > 2 && (
-                            <span className="font-mono text-[9px] text-text-dim">+{t.mistakes.length - 2}</span>
-                          )}
+                {trades.map((t) => {
+                  const isSelected = selectedIds.includes(t.id);
+                  return (
+                    <tr key={t.id} className={`border-b border-border/50 transition-colors ${isSelected ? 'bg-accent/5' : 'hover:bg-bg-elevated/50'}`}>
+                      <td className="p-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(t.id)}
+                          className="accent-[#00D9FF] cursor-pointer"
+                        />
+                      </td>
+                      <td className="p-4">
+                        <div className="font-mono text-sm text-text">{t.symbol}</div>
+                        <div className="font-mono text-[10px] text-text-dim uppercase tracking-wider">{t.market}</div>
+                        {t.trading_session && (
+                          <div className="font-mono text-[9px] text-accent/70 uppercase tracking-wider mt-0.5">
+                            {TRADING_SESSIONS.find(s => s.value === t.trading_session)?.label ?? t.trading_session}
+                          </div>
+                        )}
+                        {t.mistakes && t.mistakes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {t.mistakes.slice(0, 2).map((m: string) => (
+                              <span key={m} className="font-mono text-[9px] uppercase tracking-wider text-signal-red/70 border border-signal-red/20 px-1.5 py-px rounded">
+                                {m}
+                              </span>
+                            ))}
+                            {t.mistakes.length > 2 && (
+                              <span className="font-mono text-[9px] text-text-dim">+{t.mistakes.length - 2}</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
+                      <td className="p-4 hidden md:table-cell">
+                        {t.strategy && (
+                          <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border rounded text-text-dim">
+                            {t.strategy}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 hidden md:table-cell">
+                        {t.emotion && (
+                          <span className={`font-mono text-[10px] uppercase tracking-wider ${
+                            ['calm','confident','disciplined','patient','focused','in-the-zone'].includes(t.emotion)
+                              ? 'text-signal-green' : 'text-signal-red'
+                          }`}>
+                            {t.emotion}
+                          </span>
+                        )}
+                      </td>
+                      <td className={`p-4 text-right font-mono text-sm tabular font-bold whitespace-nowrap ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
+                        {t.pnl != null ? `${Number(t.pnl) >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}` : '—'}
+                      </td>
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded ${
+                          t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
+                        }`}>{t.status}</span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <button onClick={() => startEdit(t)} className="text-text-dim hover:text-accent text-xs transition flex items-center gap-1">
+                            <Pencil size={11} /> Edit
+                          </button>
+                          <button onClick={() => remove(t.id)} className="text-text-dim hover:text-signal-red text-xs transition">
+                            Delete
+                          </button>
                         </div>
-                      )}
-                    </td>
-                    <td className="p-4 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
-                    <td className="p-4 hidden md:table-cell">
-                      {t.strategy && (
-                        <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border rounded text-text-dim">
-                          {t.strategy}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 hidden md:table-cell">
-                      {t.emotion && (
-                        <span className={`font-mono text-[10px] uppercase tracking-wider ${
-                          ['calm','confident','disciplined','patient','focused','in-the-zone'].includes(t.emotion)
-                            ? 'text-signal-green' : 'text-signal-red'
-                        }`}>
-                          {t.emotion}
-                        </span>
-                      )}
-                    </td>
-                    <td className={`p-4 text-right font-mono text-sm tabular font-bold whitespace-nowrap ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
-                      {t.pnl != null ? `${Number(t.pnl) >= 0 ? '+' : ''}$${Number(t.pnl).toFixed(2)}` : '—'}
-                    </td>
-                    <td className="p-4 text-right whitespace-nowrap">
-                      <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded ${
-                        t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
-                      }`}>{t.status}</span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button onClick={() => startEdit(t)} className="text-text-dim hover:text-accent text-xs transition flex items-center gap-1">
-                          <Pencil size={11} /> Edit
-                        </button>
-                        <button onClick={() => remove(t.id)} className="text-text-dim hover:text-signal-red text-xs transition">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* ── Floating bulk action bar ─────────────────────────────────────── */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 bg-bg-elevated border border-border rounded-xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <span className="font-mono text-sm text-text-muted">
+            <span className="text-text font-bold">{selectedIds.length}</span> {selectedIds.length === 1 ? 'trade' : 'trades'} selected
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <button
+            onClick={() => setSelectedIds([])}
+            className="font-mono text-[11px] text-text-dim hover:text-text transition tracking-wider"
+          >
+            Clear
+          </button>
+          <button
+            onClick={() => setShowBulkConfirm(true)}
+            className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-signal-red hover:text-white hover:bg-signal-red border border-signal-red/40 hover:border-signal-red rounded-lg px-3 py-1.5 transition"
+          >
+            <Trash2 size={12} />
+            Delete selected
+          </button>
+        </div>
+      )}
     </div>
   );
 }

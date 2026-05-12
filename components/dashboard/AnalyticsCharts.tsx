@@ -81,6 +81,31 @@ export default function AnalyticsCharts({ trades }: { trades: any[] }) {
   });
   const emoData = Object.entries(byEmo).map(([emotion, pnl]) => ({ emotion, pnl: Number(pnl.toFixed(2)) }));
 
+  // ── P&L by trading session ───────────────────────────────────────────────
+  const bySession: Record<string, { pnl: number; count: number; wins: number }> = {};
+  trades.forEach((t: any) => {
+    if (!t.trading_session) return;
+    const s = t.trading_session;
+    bySession[s] = bySession[s] || { pnl: 0, count: 0, wins: 0 };
+    bySession[s].pnl   += Number(t.pnl || 0);
+    bySession[s].count += 1;
+    if (Number(t.pnl) > 0) bySession[s].wins += 1;
+  });
+  const SESSION_LABELS: Record<string, string> = {
+    'asian':                  'Asian',
+    'european':               'European',
+    'american':               'American',
+    'pacific':                'Pacific',
+    'asia-europe-overlap':    'Asia–EU',
+    'europe-america-overlap': 'EU–US',
+  };
+  const sessionData = Object.entries(bySession).map(([session, d]) => ({
+    session: SESSION_LABELS[session] ?? session,
+    pnl:     Number(d.pnl.toFixed(2)),
+    winRate: Number((d.wins / d.count * 100).toFixed(1)),
+  }));
+  const hasSessionData = sessionData.length > 0;
+
   // ── Mistake summary ───────────────────────────────────────────────────────
   const byMistake: Record<string, { pnl: number; count: number }> = {};
   let cleanPnl = 0, cleanCount = 0;
@@ -180,6 +205,26 @@ export default function AnalyticsCharts({ trades }: { trades: any[] }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* ── P&L by trading session ───────────────────────────────────── */}
+      {hasSessionData && (
+        <div className="card rounded-xl p-6">
+          <h3 className="font-bold text-base text-text mb-1">P&L by Trading Session</h3>
+          <p className="mono-label mb-5">Which session is your edge strongest in?</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={sessionData}>
+              <XAxis dataKey="session" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
+              <YAxis stroke={axisStroke} tickLine={false} axisLine={false} fontSize={11} tick={{ fill: tickColor }} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={labelStyle} itemStyle={itemStyle} />
+              <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>
+                {sessionData.map((d, i) => (
+                  <Cell key={i} fill={d.pnl >= 0 ? CHART_GREEN : CHART_RED} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* ── Mistake tracking summary ─────────────────────────────────── */}
       <div className="card rounded-xl p-6">

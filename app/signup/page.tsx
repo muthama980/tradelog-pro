@@ -14,6 +14,7 @@ function SignupForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailOptIn, setEmailOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -26,7 +27,7 @@ function SignupForm() {
       email,
       password,
       options: {
-        data: { full_name: name, plan_intent: plan },
+        data: { full_name: name, plan_intent: plan, email_opt_in: emailOptIn },
         emailRedirectTo: 'https://tradelogpro.xyz/auth/callback',
       },
     });
@@ -147,6 +148,19 @@ function SignupForm() {
               placeholder="At least 8 characters"
             />
           </div>
+        </div>
+
+        <div className="flex items-start gap-3 py-1">
+          <input
+            type="checkbox"
+            id="email_opt_in"
+            checked={emailOptIn}
+            onChange={(e) => setEmailOptIn(e.target.checked)}
+            className="mt-0.5 accent-[#00D9FF] cursor-pointer"
+          />
+          <label htmlFor="email_opt_in" className="text-sm text-text-muted cursor-pointer leading-relaxed select-none">
+            Send me trading tips and product updates
+          </label>
         </div>
 
         {error && (

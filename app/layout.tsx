@@ -6,16 +6,16 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'TradeLog Pro — The AI Trading Journal for Serious Traders',
+  title: 'TradeLog Pro — The Professional Trading Journal',
   description:
-    'Crypto, forex, and stocks. One disciplined journal. AI coaching that finds the patterns your eyes miss. Built for traders who treat this like a profession.',
+    'Crypto, forex, and stocks. One disciplined journal. Pattern coaching that finds the leaks your eyes miss. Built for traders who treat this like a profession.',
   keywords: [
     'trading journal', 'crypto trading journal', 'forex journal',
-    'AI trading coach', 'FTMO journal', 'prop firm journal',
-    'TradeLog Pro', 'trading analytics',
+    'trading coach', 'trading analytics',
+    'TradeLog Pro', 'professional trading journal',
   ],
   openGraph: {
-    title: 'TradeLog Pro — The AI Trading Journal',
+    title: 'TradeLog Pro — The Professional Trading Journal',
     description: 'Know why you win. Know why you lose. Trade like a professional.',
     type: 'website',
   },

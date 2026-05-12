@@ -8,9 +8,18 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Allow ?next= only for internal auth paths (e.g. password reset)
+      // Save email_opt_in preference from signup metadata to profile
+      if (data?.user) {
+        const optIn = data.user.user_metadata?.email_opt_in;
+        if (optIn !== undefined) {
+          await supabase
+            .from('profiles')
+            .update({ email_opt_in: Boolean(optIn) })
+            .eq('id', data.user.id);
+        }
+      }
       const safePath = next.startsWith('/auth/') ? next : '/dashboard';
       return NextResponse.redirect(new URL(safePath, 'https://tradelogpro.xyz'));
     }

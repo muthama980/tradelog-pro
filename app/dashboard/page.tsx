@@ -216,7 +216,7 @@ function GettingStartedCard({ hasTrades, hasConnection }: { hasTrades: boolean; 
     {
       num: 4,
       title: 'Explore AI Coach',
-      desc: 'Get AI-powered feedback on your trading patterns.',
+      desc: 'Get intelligent pattern analysis on your trades.',
       href: '/dashboard/coach',
       done: false,
     },

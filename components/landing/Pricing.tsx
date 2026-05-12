@@ -96,11 +96,34 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
   const [showEliteWaitlist, setShowEliteWaitlist] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
   function closeWaitlist() {
     setShowEliteWaitlist(false);
     setWaitlistSubmitted(false);
     setWaitlistEmail('');
+    setWaitlistError(null);
+  }
+
+  async function submitWaitlist() {
+    if (!waitlistEmail.trim()) return;
+    setWaitlistLoading(true);
+    setWaitlistError(null);
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: waitlistEmail.trim(), feature: 'elite' }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setWaitlistError(json.error || 'Something went wrong.'); return; }
+      setWaitlistSubmitted(true);
+    } catch {
+      setWaitlistError('Network error. Please try again.');
+    } finally {
+      setWaitlistLoading(false);
+    }
   }
 
   async function handleCTAClick(tier: Tier) {
@@ -294,17 +317,21 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
                     type="email"
                     value={waitlistEmail}
                     onChange={(e) => setWaitlistEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && setWaitlistSubmitted(true)}
+                    onKeyDown={(e) => e.key === 'Enter' && submitWaitlist()}
                     placeholder="your@email.com"
                     className="flex-1 bg-bg border border-border rounded-lg px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-accent/50 transition-colors"
                   />
                   <button
-                    onClick={() => setWaitlistSubmitted(true)}
-                    className="btn-primary shrink-0 text-sm"
+                    onClick={submitWaitlist}
+                    disabled={waitlistLoading || !waitlistEmail.trim()}
+                    className="btn-primary shrink-0 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Notify me
+                    {waitlistLoading ? <Loader2 size={14} className="animate-spin" /> : 'Notify me'}
                   </button>
                 </div>
+                {waitlistError && (
+                  <p className="text-sm text-signal-red mt-2">{waitlistError}</p>
+                )}
                 <p className="mt-3 mono-label tracking-wider text-center">
                   No spam · Unsubscribe anytime
                 </p>

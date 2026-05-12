@@ -3,15 +3,32 @@
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Mail, Send, CheckCircle } from 'lucide-react';
+import { Mail, Send, CheckCircle, Loader2 } from 'lucide-react';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || 'Something went wrong. Please try again.'); return; }
+      setSubmitted(true);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -42,7 +59,7 @@ export default function ContactPage() {
               <CheckCircle className="text-signal-green mx-auto mb-4" size={40} strokeWidth={1.5} />
               <h2 className="text-xl font-bold text-text mb-2">Message sent!</h2>
               <p className="text-text-muted text-sm">
-                Thanks for reaching out. We'll get back to you within 24 hours.
+                We'll get back to you within 24 hours.
               </p>
             </div>
           ) : (
@@ -93,9 +110,14 @@ export default function ContactPage() {
                   className="w-full bg-bg-elevated border border-border rounded-lg px-4 py-2.5 text-sm text-text placeholder-text-dim focus:outline-none focus:border-accent/50 transition resize-none"
                 />
               </div>
-              <button type="submit" className="btn-primary gap-2">
-                <Send size={14} />
-                Send message
+              {error && (
+                <div className="text-sm text-signal-red border border-signal-red/30 bg-signal-red/5 p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <button type="submit" disabled={loading} className="btn-primary gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                {loading ? 'Sending…' : 'Send message'}
               </button>
             </form>
           )}

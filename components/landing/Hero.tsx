@@ -132,7 +132,7 @@ export default function Hero() {
 
           <p className="text-text-muted text-base leading-relaxed mb-8 max-w-lg mx-auto">
             The professional trading journal for crypto, forex, and equities.
-            AI coaching that surfaces the patterns your eyes miss.
+            Intelligent coaching that surfaces the patterns your eyes miss.
           </p>
 
           <div className="flex flex-wrap gap-3 justify-center mb-6">
