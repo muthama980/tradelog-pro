@@ -23,7 +23,7 @@ const PLAN_LABELS: Record<string, string> = {
   trial:     'Free Trial',
   core:      'Core Plan',
   pro:       'Pro Plan',
-  prop:      'Prop Trader',
+  prop:      'Elite Plan',
   cancelled: 'Plan Expired',
 };
 

@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   // Pro+ plan only
   const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single();
   if (!['pro', 'prop'].includes(profile?.plan || '')) {
-    return NextResponse.json({ error: 'AI Coach requires Pro or Prop Trader plan' }, { status: 403 });
+    return NextResponse.json({ error: 'AI Coach requires Pro or Elite plan' }, { status: 403 });
   }
 
   // Get last 30 closed trades

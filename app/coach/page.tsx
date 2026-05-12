@@ -222,7 +222,7 @@ export default function CoachPage() {
               Try AI Coach free for 4 days
             </Link>
             <p className="mt-4 mono-label tracking-wider">
-              AI Coach · Included in Pro & Prop Trader
+              AI Coach · Included in Pro
             </p>
           </div>
         </section>

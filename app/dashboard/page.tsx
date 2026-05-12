@@ -293,7 +293,7 @@ function PlanBadge({ plan, trialDays }: { plan: string; trialDays: number }) {
       <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full text-bg font-bold"
         style={{ background: 'linear-gradient(135deg, #00D9FF 0%, #0099CC 100%)' }}>
         <Trophy size={10} fill="currentColor" strokeWidth={0} />
-        PROP TRADER
+        ELITE PLAN
       </span>
     );
   }
