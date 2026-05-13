@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import {
   Plug, RefreshCw, Trash2, X, Loader2, CheckCircle, AlertCircle,
-  Clock, Upload, Bell, ChevronRight, FileText, Zap, Info,
+  Clock, Upload, Bell, ChevronRight, FileText, Zap, Info, Cable,
 } from 'lucide-react';
+import BrokerConnectionModal from '@/components/dashboard/BrokerConnectionModal';
+import ConnectedBrokers from '@/components/dashboard/ConnectedBrokers';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,9 +30,21 @@ interface CsvTrade {
 
 type ExchangeId = 'binance' | 'coinbase' | 'kraken' | 'okx';
 
+interface BrokerConnection {
+  id: string;
+  broker_name: string;
+  platform: string;
+  account_number: string;
+  server: string;
+  status: string;
+  last_synced_at: string | null;
+  created_at: string;
+}
+
 type Method =
   | { kind: 'api'; exchange: ExchangeId; name: string; hint: string }
   | { kind: 'csv'; format: string; name: string; hint: string }
+  | { kind: 'broker'; name: string; hint: string }
   | { kind: 'coming-soon'; name: string; hint: string }
   | { kind: 'manual'; name: string; hint: string };
 
@@ -103,10 +117,10 @@ const MARKETS: {
   },
   {
     id: 'forex', name: 'Forex', description: 'Currency pairs', symbol: 'FX',
-    note: 'Forex brokers primarily support CSV import. Upload your trade history to get started.',
     methods: [
-      { kind: 'coming-soon', name: 'OANDA API',        hint: 'Auto-sync coming soon' },
+      { kind: 'broker', name: 'MT4 / MT5 Broker', hint: 'Connect Exness, XM, Vantage, IC Markets & more' },
       { kind: 'csv', format: 'metatrader', name: 'MetaTrader 4/5 CSV', hint: 'Import MT4 or MT5 trade statements' },
+      { kind: 'coming-soon', name: 'OANDA API',        hint: 'Auto-sync coming soon' },
       { kind: 'coming-soon', name: 'cTrader CSV',      hint: 'Import coming soon' },
       { kind: 'manual', name: 'Manual Entry',          hint: 'Log trades in your journal' },
     ],
@@ -115,6 +129,7 @@ const MARKETS: {
     id: 'stocks', name: 'Stocks', description: 'Equities, indices', symbol: '↗',
     note: 'Stock brokers primarily support CSV import. Upload your trade history to get started.',
     methods: [
+      { kind: 'broker', name: 'MT5 Broker', hint: 'Connect stocks/indices broker via MT5 account' },
       { kind: 'coming-soon', name: 'Alpaca API',                hint: 'Auto-sync coming soon' },
       { kind: 'coming-soon', name: 'Interactive Brokers CSV',   hint: 'Import coming soon' },
       { kind: 'coming-soon', name: 'TradingView CSV',           hint: 'Import coming soon' },
@@ -123,8 +138,8 @@ const MARKETS: {
   },
   {
     id: 'futures', name: 'Futures', description: 'Commodities, indices', symbol: '◈',
-    note: 'Futures brokers primarily support CSV import. Upload your trade history to get started.',
     methods: [
+      { kind: 'broker', name: 'MT4 / MT5 Broker', hint: 'Connect futures broker via MT4/MT5 account' },
       { kind: 'csv', format: 'metatrader', name: 'MetaTrader CSV', hint: 'Import futures trade statements' },
       { kind: 'coming-soon', name: 'NinjaTrader CSV', hint: 'Import coming soon' },
       { kind: 'manual', name: 'Manual Entry',         hint: 'Log trades in your journal' },
@@ -160,6 +175,11 @@ export default function ConnectionsPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
+  // Broker connections
+  const [brokerConnections, setBrokerConnections] = useState<BrokerConnection[]>([]);
+  const [brokerModalOpen, setBrokerModalOpen] = useState(false);
+  const [disconnectingBroker, setDisconnectingBroker] = useState<string | null>(null);
+
   // Sync
   const [syncingExchange, setSyncingExchange] = useState<string | null>(null);
   const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
@@ -176,11 +196,27 @@ export default function ConnectionsPage() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch('/api/connections');
-    if (res.ok) setConnections(await res.json());
+    const [connRes, brokerRes] = await Promise.all([
+      fetch('/api/connections'),
+      fetch('/api/broker-connections'),
+    ]);
+    if (connRes.ok) setConnections(await connRes.json());
+    if (brokerRes.ok) setBrokerConnections(await brokerRes.json());
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
+  async function disconnectBroker(id: string, brokerName: string) {
+    if (!confirm(`Disconnect ${brokerName}? Your existing trades will not be deleted.`)) return;
+    setDisconnectingBroker(id);
+    await fetch('/api/broker-connections', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setDisconnectingBroker(null);
+    setBrokerConnections(prev => prev.filter(c => c.id !== id));
+  }
 
   // ── Connect modal ────────────────────────────────────────────────────────────
 
@@ -386,6 +422,33 @@ export default function ConnectionsPage() {
   function renderMethod(method: Method, i: number) {
     if (method.kind === 'api') {
       return renderApiCard(method.exchange, method.name, method.hint, i);
+    }
+
+    if (method.kind === 'broker') {
+      return (
+        <button
+          key={i}
+          onClick={() => setBrokerModalOpen(true)}
+          className="card rounded-xl p-5 flex items-center gap-4 text-left transition-colors hover:border-border-strong"
+          style={{ borderColor: 'rgba(0,217,255,0.25)', background: 'rgba(0,217,255,0.03)' }}
+        >
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: 'rgba(0,217,255,0.1)', border: '1px solid rgba(0,217,255,0.25)' }}>
+            <Cable size={16} className="text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-text text-sm">{method.name}</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest"
+                style={{ background: 'rgba(0,217,255,0.1)', color: '#00D9FF' }}>
+                New
+              </span>
+            </div>
+            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+          </div>
+          <ChevronRight size={15} className="text-accent shrink-0" />
+        </button>
+      );
     }
 
     if (method.kind === 'csv') {
@@ -649,6 +712,15 @@ export default function ConnectionsPage() {
               </button>
             </div>
           )}
+
+          {/* Connected brokers list */}
+          {['forex', 'stocks', 'futures'].includes(currentMarket.id) && (
+            <ConnectedBrokers
+              connections={brokerConnections}
+              disconnecting={disconnectingBroker}
+              onDisconnect={disconnectBroker}
+            />
+          )}
         </div>
       )}
 
@@ -661,6 +733,17 @@ export default function ConnectionsPage() {
             <X size={14} />
           </button>
         </div>
+      )}
+
+      {/* Broker connection modal */}
+      {brokerModalOpen && (
+        <BrokerConnectionModal
+          onClose={() => setBrokerModalOpen(false)}
+          onConnected={conn => {
+            setBrokerConnections(prev => [conn, ...prev]);
+            setBrokerModalOpen(false);
+          }}
+        />
       )}
 
       {/* Connect modal */}
