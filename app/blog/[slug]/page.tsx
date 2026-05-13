@@ -4,6 +4,8 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { ShareButtons } from '@/components/blog/ShareButtons';
+import type { Metadata } from 'next';
 
 export const revalidate = 60;
 
@@ -11,6 +13,35 @@ const CATEGORY_LABEL: Record<string, string> = {
   news: 'Market News', strategy: 'Strategy', psychology: 'Psychology',
   product: 'Product', 'market-recap': 'Recap',
 };
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const supabase = createClient();
+  const { data: post } = await supabase
+    .from('posts')
+    .select('title, excerpt, slug')
+    .eq('slug', params.slug)
+    .eq('published', true)
+    .single();
+
+  if (!post) return {};
+
+  return {
+    title: post.title + ' | TradeLog Pro',
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url: 'https://tradelogpro.xyz/blog/' + post.slug,
+      type: 'article',
+      siteName: 'TradeLog Pro',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+    },
+  };
+}
 
 function renderMd(md: string) {
   const lines = md.split('\n');
@@ -108,9 +139,21 @@ export default async function PostPage({ params }: { params: { slug: string } })
             <div className="divider mt-8" />
           </div>
 
+          <div className="mb-10">
+            <ShareButtons title={post.title} slug={post.slug} />
+          </div>
+
           <div>{renderMd(post.body_md)}</div>
 
           <div className="divider my-14" />
+
+          <div className="mb-10">
+            <ShareButtons
+              title={post.title}
+              slug={post.slug}
+              label="Found this useful? Share it with a fellow trader."
+            />
+          </div>
 
           <div className="text-center card rounded-xl p-8">
             <p className="font-bold text-lg text-text mb-2">Want this disciplined record-keeping in your own trading?</p>

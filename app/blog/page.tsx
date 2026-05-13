@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
+import { CopyLinkButton } from '@/components/blog/ShareButtons';
 
 export const revalidate = 60;
 
@@ -44,60 +45,63 @@ export default async function BlogPage() {
           ) : (
             <>
               {featured && (
-                <Link
-                  href={`/blog/${featured.slug}`}
-                  className="block card rounded-xl overflow-hidden mb-10 group transition"
-                >
-                  <div className="grid md:grid-cols-2 gap-0">
-                    <div className="flex flex-col justify-center p-8 md:p-10">
-                      <div className="flex items-center gap-3 mb-5">
-                        <span className="font-mono text-[10px] tracking-widest text-accent uppercase border border-accent/30 px-2 py-1 rounded">
-                          {CATEGORY_LABEL[featured.category] || featured.category}
+                <div className="relative card rounded-xl overflow-hidden mb-10 group transition">
+                  <Link href={`/blog/${featured.slug}`} className="block">
+                    <div className="grid md:grid-cols-2 gap-0">
+                      <div className="flex flex-col justify-center p-8 md:p-10">
+                        <div className="flex items-center gap-3 mb-5">
+                          <span className="font-mono text-[10px] tracking-widest text-accent uppercase border border-accent/30 px-2 py-1 rounded">
+                            {CATEGORY_LABEL[featured.category] || featured.category}
+                          </span>
+                          <span className="mono-label">{featured.read_minutes} min read</span>
+                        </div>
+                        <h2 className="font-bold text-2xl md:text-3xl leading-tight text-text mb-4 group-hover:text-accent transition">
+                          {featured.title}
+                        </h2>
+                        <p className="text-text-muted leading-relaxed mb-6 text-sm">{featured.excerpt}</p>
+                        <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-widest text-accent uppercase">
+                          Read article <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                         </span>
-                        <span className="mono-label">{featured.read_minutes} min read</span>
                       </div>
-                      <h2 className="font-bold text-2xl md:text-3xl leading-tight text-text mb-4 group-hover:text-accent transition">
-                        {featured.title}
-                      </h2>
-                      <p className="text-text-muted leading-relaxed mb-6 text-sm">{featured.excerpt}</p>
-                      <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-widest text-accent uppercase">
-                        Read article <ArrowUpRight size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                      </span>
-                    </div>
-                    <div className="hidden md:flex items-center justify-center bg-bg-elevated border-l border-border p-10">
-                      <div className="font-mono text-8xl font-black text-text-dim/20 tabular leading-none">
-                        {String(rest.length + 1).padStart(2, '0')}
+                      <div className="hidden md:flex items-center justify-center bg-bg-elevated border-l border-border p-10">
+                        <div className="font-mono text-8xl font-black text-text-dim/20 tabular leading-none">
+                          {String(rest.length + 1).padStart(2, '0')}
+                        </div>
                       </div>
                     </div>
+                  </Link>
+                  <div className="absolute top-3 right-3">
+                    <CopyLinkButton slug={featured.slug} />
                   </div>
-                </Link>
+                </div>
               )}
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {rest.map((p: any) => (
-                  <Link
-                    key={p.id}
-                    href={`/blog/${p.slug}`}
-                    className="card rounded-xl p-6 group transition flex flex-col"
-                  >
-                    <div className="flex items-center gap-3 mb-5">
-                      <span className="font-mono text-[10px] tracking-widest text-accent uppercase">
-                        {CATEGORY_LABEL[p.category] || p.category}
-                      </span>
-                      <div className="h-px flex-1 bg-border" />
-                      <span className="mono-label">{p.read_minutes} min</span>
+                  <div key={p.id} className="relative card rounded-xl group transition flex flex-col">
+                    <Link href={`/blog/${p.slug}`} className="flex flex-col flex-1 p-6">
+                      <div className="flex items-center gap-3 mb-5">
+                        <span className="font-mono text-[10px] tracking-widest text-accent uppercase">
+                          {CATEGORY_LABEL[p.category] || p.category}
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="mono-label">{p.read_minutes} min</span>
+                      </div>
+                      <h3 className="font-bold text-lg leading-tight text-text mb-3 group-hover:text-accent transition">
+                        {p.title}
+                      </h3>
+                      <p className="text-sm text-text-muted leading-relaxed flex-1 mb-5">{p.excerpt}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="mono-label">
+                          {new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <ArrowUpRight size={14} className="text-accent group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </div>
+                    </Link>
+                    <div className="absolute top-3 right-3">
+                      <CopyLinkButton slug={p.slug} />
                     </div>
-                    <h3 className="font-bold text-lg leading-tight text-text mb-3 group-hover:text-accent transition">
-                      {p.title}
-                    </h3>
-                    <p className="text-sm text-text-muted leading-relaxed flex-1 mb-5">{p.excerpt}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="mono-label">
-                        {new Date(p.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                      <ArrowUpRight size={14} className="text-accent group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </>
