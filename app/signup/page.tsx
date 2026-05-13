@@ -2,30 +2,111 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowRight, Mail, Lock, User } from 'lucide-react';
+import { ArrowRight, Mail, Lock, User, Eye, EyeOff, Wand2 } from 'lucide-react';
+
+function checkRules(pw: string) {
+  return {
+    minLength: pw.length >= 8,
+    hasUpper: /[A-Z]/.test(pw),
+    hasLower: /[a-z]/.test(pw),
+    hasNumber: /[0-9]/.test(pw),
+    hasSpecial: /[!@#$%^&*]/.test(pw),
+  };
+}
+
+function strengthLevel(rules: ReturnType<typeof checkRules>): 'weak' | 'medium' | 'strong' {
+  const score = Object.values(rules).filter(Boolean).length;
+  if (score <= 2) return 'weak';
+  if (score <= 3) return 'medium';
+  return 'strong';
+}
+
+function generatePassword(): string {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const nums = '23456789';
+  const special = '!@#$%^&*';
+  const all = upper + lower + nums + special;
+  const pw = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    nums[Math.floor(Math.random() * nums.length)],
+    nums[Math.floor(Math.random() * nums.length)],
+    special[Math.floor(Math.random() * special.length)],
+    ...Array.from({ length: 8 }, () => all[Math.floor(Math.random() * all.length)]),
+  ];
+  for (let i = pw.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pw[i], pw[j]] = [pw[j], pw[i]];
+  }
+  return pw.join('');
+}
+
+const RULE_LABELS: [keyof ReturnType<typeof checkRules>, string][] = [
+  ['minLength', '8+ characters'],
+  ['hasUpper',  'Uppercase letter'],
+  ['hasLower',  'Lowercase letter'],
+  ['hasNumber', 'Number'],
+  ['hasSpecial', 'Special (!@#$%^&*)'],
+];
 
 function SignupForm() {
   const router = useRouter();
   const params = useSearchParams();
   const plan = params.get('plan') || 'pro';
   const supabase = createClient();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const rules = useMemo(() => checkRules(password), [password]);
+  const strength = useMemo(() => strengthLevel(rules), [rules]);
+
+  const strengthConfig = {
+    weak:   { segments: 1, color: 'bg-signal-red',  label: 'Weak',   text: 'text-signal-red'  },
+    medium: { segments: 2, color: 'bg-amber-400',   label: 'Medium', text: 'text-amber-400'   },
+    strong: { segments: 3, color: 'bg-signal-green', label: 'Strong', text: 'text-signal-green' },
+  };
+  const sc = strengthConfig[strength];
+
+  const confirmMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
+  function suggestPassword() {
+    const pw = generatePassword();
+    setPassword(pw);
+    setConfirmPassword(pw);
+    setShowPassword(true);
+    setShowConfirm(true);
+    setError(null);
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Password must be at least 8 characters with at least one letter and one number.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
     setLoadingStep('Creating your account…');
 
-    // Step 1: Create the account
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -42,7 +123,6 @@ function SignupForm() {
 
     setLoadingStep('Setting up your dashboard…');
 
-    // Step 2: Immediately sign in (requires email confirmation disabled in Supabase dashboard)
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -54,7 +134,6 @@ function SignupForm() {
       return;
     }
 
-    // Step 3: Set up trial profile
     const userId = signInData.user.id;
     const trialEndsAt = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -68,10 +147,8 @@ function SignupForm() {
       email_opt_in: emailOptIn,
     }, { onConflict: 'id' });
 
-    // Step 4: Persist session so SessionGuard doesn't sign the user out
     localStorage.setItem('tlp_remember', 'true');
 
-    // Step 5: Enter the app
     router.push('/dashboard');
     router.refresh();
   }
@@ -123,6 +200,7 @@ function SignupForm() {
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
+        {/* Full name */}
         <div>
           <label className="mono-label mb-2 block">Full name</label>
           <div className="relative">
@@ -139,6 +217,7 @@ function SignupForm() {
           </div>
         </div>
 
+        {/* Email */}
         <div>
           <label className="mono-label mb-2 block">Email</label>
           <div className="relative">
@@ -155,23 +234,112 @@ function SignupForm() {
           </div>
         </div>
 
+        {/* Password */}
         <div>
-          <label className="mono-label mb-2 block">Password</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="mono-label">Password</label>
+            <button
+              type="button"
+              onClick={suggestPassword}
+              disabled={loading}
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest text-accent uppercase hover:text-accent/70 transition disabled:opacity-50"
+            >
+              <Wand2 size={11} />
+              Suggest strong password
+            </button>
+          </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" size={15} />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={8}
               disabled={loading}
-              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-4 text-text text-sm placeholder:text-text-dim outline-none transition disabled:opacity-60"
+              className="w-full bg-bg border border-border focus:border-accent/60 rounded-lg py-2.5 pl-10 pr-10 text-text text-sm placeholder:text-text-dim outline-none transition disabled:opacity-60"
               placeholder="At least 8 characters"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              tabIndex={-1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text transition"
+            >
+              {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
           </div>
+
+          {/* Strength indicator */}
+          {password && (
+            <div className="mt-2.5 space-y-2">
+              {/* Segmented bar */}
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1 flex-1">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-0.5 flex-1 rounded-full transition-all duration-300 ${
+                        i < sc.segments ? sc.color : 'bg-border'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className={`font-mono text-[10px] tracking-widest uppercase shrink-0 ${sc.text}`}>
+                  {sc.label}
+                </span>
+              </div>
+
+              {/* Rules checklist */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {RULE_LABELS.map(([key, label]) => {
+                  const ok = rules[key];
+                  return (
+                    <div key={key} className="flex items-center gap-1.5">
+                      <span className={`font-mono text-[11px] leading-none ${ok ? 'text-signal-green' : 'text-text-dim'}`}>
+                        {ok ? '✓' : '×'}
+                      </span>
+                      <span className={`font-mono text-[10px] ${ok ? 'text-text-muted' : 'text-text-dim'}`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Confirm password */}
+        <div>
+          <label className="mono-label mb-2 block">Confirm password</label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" size={15} />
+            <input
+              type={showConfirm ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              disabled={loading}
+              className={`w-full bg-bg border rounded-lg py-2.5 pl-10 pr-10 text-text text-sm placeholder:text-text-dim outline-none transition disabled:opacity-60 ${
+                confirmMismatch ? 'border-signal-red/60 focus:border-signal-red' : 'border-border focus:border-accent/60'
+              }`}
+              placeholder="Repeat your password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((v) => !v)}
+              tabIndex={-1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-text transition"
+            >
+              {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          </div>
+          {confirmMismatch && (
+            <p className="mt-1.5 font-mono text-[10px] text-signal-red">Passwords do not match</p>
+          )}
+        </div>
+
+        {/* Email opt-in */}
         <div className="flex items-start gap-3 py-1">
           <input
             type="checkbox"

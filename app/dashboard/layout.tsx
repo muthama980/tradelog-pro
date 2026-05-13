@@ -15,7 +15,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.replace('/login');
+      if (!user) {
+        router.replace('/login');
+        return;
+      }
+      supabase
+        .from('profiles')
+        .select('plan, trial_ends_at')
+        .eq('id', user.id)
+        .single()
+        .then(({ data: profile }) => {
+          if (
+            profile?.plan === 'trial' &&
+            profile?.trial_ends_at &&
+            new Date(profile.trial_ends_at) < new Date()
+          ) {
+            router.replace('/trial-expired');
+          }
+        });
     });
   }, []);
 

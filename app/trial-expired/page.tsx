@@ -37,8 +37,8 @@ export default function TrialExpiredPage() {
         </p>
       </div>
 
-      {/* Pricing cards — reuses the full Pricing component */}
-      <Pricing standalone />
+      {/* Pricing cards — payment modal enabled here since trial has expired */}
+      <Pricing standalone paymentEnabled />
 
       {/* Footer note */}
       <div className="pb-16 text-center px-6">

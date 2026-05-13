@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Loader2, Clock, X } from 'lucide-react';
+import { Check, Loader2, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import PaymentMethodModal from '@/components/PaymentMethodModal';
 
@@ -88,49 +88,36 @@ const TIERS: Tier[] = [
 
 type ModalPlan = { planKey: string; planName: string; planPrice: string } | null;
 
-export default function Pricing({ standalone = false }: { standalone?: boolean }) {
+export default function Pricing({
+  standalone = false,
+  paymentEnabled = false,
+}: {
+  standalone?: boolean;
+  paymentEnabled?: boolean;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [modalPlan, setModalPlan] = useState<ModalPlan>(null);
-  const [showEliteWaitlist, setShowEliteWaitlist] = useState(false);
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
-  const [waitlistLoading, setWaitlistLoading] = useState(false);
-  const [waitlistError, setWaitlistError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  function closeWaitlist() {
-    setShowEliteWaitlist(false);
-    setWaitlistSubmitted(false);
-    setWaitlistEmail('');
-    setWaitlistError(null);
-  }
-
-  async function submitWaitlist() {
-    if (!waitlistEmail.trim()) return;
-    setWaitlistLoading(true);
-    setWaitlistError(null);
-    try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: waitlistEmail.trim(), feature: 'elite' }),
-      });
-      const json = await res.json();
-      if (!res.ok) { setWaitlistError(json.error || 'Something went wrong.'); return; }
-      setWaitlistSubmitted(true);
-    } catch {
-      setWaitlistError('Network error. Please try again.');
-    } finally {
-      setWaitlistLoading(false);
-    }
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
   }
 
   async function handleCTAClick(tier: Tier) {
     if (tier.comingSoon) {
-      setShowEliteWaitlist(true);
+      showToast('Elite plan is coming soon!');
       return;
     }
+
+    if (!paymentEnabled) {
+      router.push(tier.signupHref);
+      return;
+    }
+
+    // paymentEnabled path (trial-expired page): check auth then show payment modal
     setLoading(tier.planKey);
     setError(null);
     try {
@@ -284,68 +271,10 @@ export default function Pricing({ standalone = false }: { standalone?: boolean }
         </div>
       </section>
 
-      {/* Elite Waitlist Modal */}
-      {showEliteWaitlist && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/70" onClick={closeWaitlist} />
-          <div className="relative card rounded-xl p-8 max-w-md w-full border-accent/30 shadow-[0_0_60px_rgba(0,217,255,0.1)]">
-            <button
-              onClick={closeWaitlist}
-              className="absolute top-4 right-4 text-text-dim hover:text-text transition-colors"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-lg border border-accent/30 bg-accent/10 flex items-center justify-center shrink-0">
-                <Clock className="text-accent" size={16} />
-              </div>
-              <div>
-                <h3 className="font-bold text-text text-lg leading-tight">Elite Plan</h3>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-accent">Coming Soon</p>
-              </div>
-            </div>
-
-            {!waitlistSubmitted ? (
-              <>
-                <p className="text-text-muted text-sm leading-relaxed mb-6">
-                  Elite plan is coming soon. Leave your email and we'll notify you the moment it launches — including early-bird pricing.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    value={waitlistEmail}
-                    onChange={(e) => setWaitlistEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && submitWaitlist()}
-                    placeholder="your@email.com"
-                    className="flex-1 bg-bg border border-border rounded-lg px-3 py-2.5 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-accent/50 transition-colors"
-                  />
-                  <button
-                    onClick={submitWaitlist}
-                    disabled={waitlistLoading || !waitlistEmail.trim()}
-                    className="btn-primary shrink-0 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {waitlistLoading ? <Loader2 size={14} className="animate-spin" /> : 'Notify me'}
-                  </button>
-                </div>
-                {waitlistError && (
-                  <p className="text-sm text-signal-red mt-2">{waitlistError}</p>
-                )}
-                <p className="mt-3 mono-label tracking-wider text-center">
-                  No spam · Unsubscribe anytime
-                </p>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <div className="w-12 h-12 rounded-full bg-signal-green/10 border border-signal-green/30 flex items-center justify-center mx-auto mb-4">
-                  <Check className="text-signal-green" size={20} strokeWidth={2.5} />
-                </div>
-                <p className="font-bold text-text mb-1">You're on the list.</p>
-                <p className="text-text-muted text-sm">We'll email you when Elite launches.</p>
-              </div>
-            )}
-          </div>
+      {/* Coming Soon toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-bg-elevated border border-accent/30 text-text text-sm px-5 py-3 rounded-xl shadow-lg font-mono tracking-wide whitespace-nowrap pointer-events-none">
+          {toast}
         </div>
       )}
 
