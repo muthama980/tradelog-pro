@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -12,11 +12,11 @@ interface Props {
 }
 
 const NAV = [
-  { href: '/dashboard',           label: 'Overview',  icon: LayoutDashboard },
-  { href: '/dashboard/journal',   label: 'Journal',   icon: BookOpen },
-  { href: '/dashboard/connections', label: 'Connections', icon: Plug },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/dashboard/coach',     label: 'AI Coach',  icon: Brain },
+  { href: '/dashboard',             label: 'Overview',     icon: LayoutDashboard, tour: 'overview' },
+  { href: '/dashboard/journal',     label: 'Journal',      icon: BookOpen,        tour: 'journal' },
+  { href: '/dashboard/connections', label: 'Connections',  icon: Plug,            tour: 'connections' },
+  { href: '/dashboard/analytics',   label: 'Analytics',    icon: BarChart3,       tour: 'analytics' },
+  { href: '/dashboard/coach',       label: 'AI Coach',     icon: Brain,           tour: 'coach' },
 ];
 
 const PLAN_LABELS: Record<string, string> = {
@@ -69,7 +69,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
         </button>
       </div>
 
-      <nav className="flex-1 px-3 py-5 space-y-0.5">
+      <nav className="flex-1 px-3 py-5 space-y-0.5" data-tour="sidebar">
         {NAV.map((item) => {
           const Icon   = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -78,6 +78,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
               key={item.href}
               href={item.href}
               onClick={onClose}
+              data-tour={item.tour}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 active
                   ? 'bg-accent/10 text-accent border-l-2 border-accent'
@@ -103,6 +104,18 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
             </span>
           </div>
         )}
+        <Link
+          href="/dashboard/help"
+          onClick={onClose}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+            pathname === '/dashboard/help'
+              ? 'bg-accent/10 text-accent border-l-2 border-accent'
+              : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+          }`}
+        >
+          <HelpCircle size={15} strokeWidth={1.7} />
+          Help
+        </Link>
         <Link
           href="/dashboard/settings"
           onClick={onClose}

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import DashboardSidebar from '@/components/dashboard/Sidebar';
 import SessionGuard from '@/components/dashboard/SessionGuard';
 import NotificationBell from '@/components/dashboard/NotificationBell';
+import OnboardingTour from '@/components/dashboard/OnboardingTour';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen flex bg-bg">
       <SessionGuard />
+      <OnboardingTour />
       <DashboardSidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <main className="flex-1 overflow-y-auto">
         <div className="sticky top-0 z-10 h-12 border-b border-border bg-bg-surface/80 backdrop-blur-sm flex items-center px-4 gap-3">
