@@ -12,7 +12,10 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(git commit *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Skill(vercel:deploy)",
+      "Bash(vercel --version)",
+      "Bash(npm i *)"
     ]
   }
 }

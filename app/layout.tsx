@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import Script from 'next/script';
 import ChatBot from '@/components/ChatBot';
 import './globals.css';
 
@@ -36,6 +37,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}
+        <Script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "a60433f77895480680a4589ea6cb3885"}'
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
