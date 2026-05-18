@@ -116,13 +116,6 @@ export default function Hero() {
         {/* ── Copy block ── centered, compact */}
         <div className="max-w-3xl mx-auto px-6 lg:px-10 text-center pb-14">
 
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2 border border-accent/25 bg-accent/[0.06] px-3 py-1.5 rounded-full mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-signal-green animate-pulse shrink-0" />
-            <span className="font-mono text-[10px] tracking-[0.14em] text-text-dim uppercase">
-              Live · 247 traders journaling now
-            </span>
-          </div>
 
           {/* Headline — capped at text-5xl */}
           <h1 className="text-5xl font-bold leading-[1.06] tracking-tight text-text mb-5">
