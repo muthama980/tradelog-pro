@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -14,6 +14,7 @@ interface Props {
 const NAV = [
   { href: '/dashboard',             label: 'Overview',     icon: LayoutDashboard, tour: 'overview' },
   { href: '/dashboard/journal',     label: 'Journal',      icon: BookOpen,        tour: 'journal' },
+  { href: '/dashboard/playbook',    label: 'Playbook',     icon: Library,         tour: 'playbook' },
   { href: '/dashboard/connections', label: 'Connections',  icon: Plug,            tour: 'connections' },
   { href: '/dashboard/analytics',   label: 'Analytics',    icon: BarChart3,       tour: 'analytics' },
   { href: '/dashboard/coach',       label: 'AI Coach',     icon: Brain,           tour: 'coach' },

@@ -5,6 +5,13 @@ import { createClient } from '@/lib/supabase/client';
 import { Plus, X, Loader2, Pencil, ChevronDown, Trash2, AlertTriangle } from 'lucide-react';
 import { computePnl } from '@/lib/utils';
 
+// ─── Broker list ─────────────────────────────────────────────────────────────
+const BROKERS = [
+  'Binance','Coinbase','Kraken','OKX','Exness','XM',
+  'IC Markets','Vantage','Pepperstone','FXTM','Deriv',
+  'MetaTrader','TradingView',
+];
+
 // ─── Strategy presets ────────────────────────────────────────────────────────
 const STRATEGY_PRESETS = [
   'breakout','trend-follow','mean-reversion','scalp','swing',
@@ -44,6 +51,7 @@ const BLANK_FORM = {
   strategy: '', emotion: '', notes: '',
   opened_at: new Date().toISOString().slice(0, 16),
   trading_session: '',
+  broker: '',
 };
 
 export default function JournalPage() {
@@ -57,6 +65,9 @@ export default function JournalPage() {
   const [selectedMistakes, setSelectedMistakes]         = useState<string[]>([]);
   const [customStrategy, setCustomStrategy]             = useState('');
   const [showCustomStrategy, setShowCustomStrategy]     = useState(false);
+  const [playbookNames, setPlaybookNames]               = useState<string[]>([]);
+  const [customBroker, setCustomBroker]                 = useState('');
+  const [showCustomBroker, setShowCustomBroker]         = useState(false);
 
   // Bulk delete state
   const [selectedIds, setSelectedIds]     = useState<string[]>([]);
@@ -70,7 +81,12 @@ export default function JournalPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    supabase.from('playbooks').select('name').order('name').then(({ data }) => {
+      if (data) setPlaybookNames(data.map((p: any) => p.name));
+    });
+  }, []);
 
   function openNew() {
     setEditingId(null);
@@ -78,13 +94,18 @@ export default function JournalPage() {
     setSelectedMistakes([]);
     setCustomStrategy('');
     setShowCustomStrategy(false);
+    setCustomBroker('');
+    setShowCustomBroker(false);
     setShowForm(true);
   }
 
   function startEdit(trade: any) {
     setEditingId(trade.id);
-    const isPreset = STRATEGY_PRESETS.includes(trade.strategy || '');
+    const isPreset = STRATEGY_PRESETS.includes(trade.strategy || '') || playbookNames.includes(trade.strategy || '');
     setShowCustomStrategy(!isPreset && !!trade.strategy);
+    const isPresetBroker = BROKERS.includes(trade.broker || '');
+    setShowCustomBroker(!isPresetBroker && !!trade.broker);
+    setCustomBroker(!isPresetBroker ? (trade.broker || '') : '');
     setCustomStrategy(!isPreset ? (trade.strategy || '') : '');
     setForm({
       symbol:           trade.symbol,
@@ -99,6 +120,7 @@ export default function JournalPage() {
       notes:            trade.notes || '',
       opened_at:        new Date(trade.opened_at).toISOString().slice(0, 16),
       trading_session:  trade.trading_session || '',
+      broker:           isPresetBroker ? (trade.broker || '') : (trade.broker ? '__other__' : ''),
     });
     setSelectedMistakes(Array.isArray(trade.mistakes) ? trade.mistakes : []);
     setShowForm(true);
@@ -146,6 +168,7 @@ export default function JournalPage() {
     const fees     = Number(form.fees || 0);
     const pnl      = exit ? computePnl({ direction: form.direction as any, entry_price: entry, exit_price: exit, position_size: size, fees }) : null;
     const strategy = form.strategy === '__custom__' ? (customStrategy.trim() || null) : (form.strategy || null);
+    const broker   = form.broker   === '__other__'  ? (customBroker.trim()   || null) : (form.broker   || null);
 
     const payload = {
       symbol:           form.symbol.toUpperCase(),
@@ -164,6 +187,7 @@ export default function JournalPage() {
       closed_at:        exit ? new Date().toISOString() : null,
       status:           exit ? 'closed' : 'open',
       trading_session:  SESSION_MARKETS.includes(form.market) && form.trading_session ? form.trading_session : null,
+      broker,
     };
 
     let error: any = null;
@@ -283,6 +307,41 @@ export default function JournalPage() {
                 </Field>
               </div>
 
+              {/* Broker */}
+              <Field label="Broker (optional)">
+                <div className="relative">
+                  <select
+                    value={showCustomBroker ? '__other__' : form.broker}
+                    onChange={(e) => {
+                      if (e.target.value === '__other__') {
+                        setShowCustomBroker(true);
+                        setForm({ ...form, broker: '__other__' });
+                      } else {
+                        setShowCustomBroker(false);
+                        setCustomBroker('');
+                        setForm({ ...form, broker: e.target.value });
+                      }
+                    }}
+                    className="form-input appearance-none pr-8"
+                  >
+                    <option value="">— select broker —</option>
+                    {BROKERS.map(b => <option key={b} value={b}>{b}</option>)}
+                    <option value="__other__">Other…</option>
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
+                </div>
+                {showCustomBroker && (
+                  <input
+                    type="text"
+                    value={customBroker}
+                    onChange={(e) => setCustomBroker(e.target.value)}
+                    className="form-input mt-2"
+                    placeholder="Enter broker name…"
+                    autoFocus
+                  />
+                )}
+              </Field>
+
               {/* Strategy */}
               <Field label="Strategy">
                 <div className="relative">
@@ -301,9 +360,18 @@ export default function JournalPage() {
                     className="form-input appearance-none pr-8"
                   >
                     <option value="">— select strategy —</option>
-                    {STRATEGY_PRESETS.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+                    {playbookNames.length > 0 && (
+                      <optgroup label="My Playbooks">
+                        {playbookNames.map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    <optgroup label={playbookNames.length > 0 ? 'Presets' : ''}>
+                      {STRATEGY_PRESETS.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </optgroup>
                     <option value="__custom__">Add custom…</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none" />
@@ -496,6 +564,9 @@ export default function JournalPage() {
                           <div className="font-mono text-[9px] text-accent/70 uppercase tracking-wider mt-0.5">
                             {TRADING_SESSIONS.find(s => s.value === t.trading_session)?.label ?? t.trading_session}
                           </div>
+                        )}
+                        {t.broker && (
+                          <div className="font-mono text-[9px] text-text-dim uppercase tracking-wider mt-0.5">{t.broker}</div>
                         )}
                         {t.mistakes && t.mistakes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">

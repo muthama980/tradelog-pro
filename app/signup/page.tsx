@@ -147,6 +147,9 @@ function SignupForm() {
       email_opt_in: emailOptIn,
     }, { onConflict: 'id' });
 
+    // fire-and-forget: welcome in-app notifications + welcome email
+    fetch('/api/notifications/welcome', { method: 'POST' }).catch(() => {});
+
     localStorage.setItem('tlp_remember', 'true');
 
     router.push('/dashboard');
