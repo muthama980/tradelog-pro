@@ -80,11 +80,15 @@ body {
 ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 217, 255, 0.3); }
 
-/* Sidebar nav — thinner, subtler scrollbar */
-.sidebar-nav::-webkit-scrollbar { width: 4px; }
-.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-.sidebar-nav::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
-.sidebar-nav::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
+/* Sidebar — full-height scroll container */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3F3F46 #111113;
+}
+.sidebar-scroll::-webkit-scrollbar { width: 6px; }
+.sidebar-scroll::-webkit-scrollbar-track { background: #111113; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: #3F3F46; border-radius: 3px; }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #52525B; }
 
 /* ── Custom utility classes ─────────────────────────────────────── */
 

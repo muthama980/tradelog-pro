@@ -62,47 +62,48 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
 
   const sidebarContent = (
     <aside className="w-60 h-full bg-bg-surface flex flex-col border-r border-border">
-      <div className="p-5 border-b border-border flex items-center justify-between shrink-0">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-accent rounded-[3px] flex items-center justify-center">
-            <span className="font-mono text-[9px] font-black text-bg tracking-[-0.05em]">TLP</span>
-          </div>
-          <span className="font-bold text-sm text-text">TradeLog<span className="text-accent">Pro</span></span>
-        </Link>
-        {/* X button — mobile only */}
-        <button
-          onClick={onClose}
-          className="lg:hidden p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-elevated transition-colors"
-          aria-label="Close menu"
-        >
-          <X size={18} strokeWidth={1.7} />
-        </button>
-      </div>
+      <div className="flex-1 overflow-y-auto sidebar-scroll">
+        <div className="p-5 border-b border-border flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-accent rounded-[3px] flex items-center justify-center">
+              <span className="font-mono text-[9px] font-black text-bg tracking-[-0.05em]">TLP</span>
+            </div>
+            <span className="font-bold text-sm text-text">TradeLog<span className="text-accent">Pro</span></span>
+          </Link>
+          {/* X button — mobile only */}
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg-elevated transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={18} strokeWidth={1.7} />
+          </button>
+        </div>
 
-      <nav className="flex-1 px-3 py-5 space-y-0.5 overflow-y-auto min-h-0 sidebar-nav" data-tour="sidebar">
-        {NAV.map((item) => {
-          const Icon   = item.icon;
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              data-tour={item.tour}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                active
-                  ? 'bg-accent/10 text-accent border-l-2 border-accent'
-                  : 'text-text-muted hover:text-text hover:bg-bg-elevated'
-              }`}
-            >
-              <Icon size={15} strokeWidth={1.7} />
-              <span className="flex-1">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+        <nav className="px-3 py-5 space-y-0.5" data-tour="sidebar">
+          {NAV.map((item) => {
+            const Icon   = item.icon;
+            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                data-tour={item.tour}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  active
+                    ? 'bg-accent/10 text-accent border-l-2 border-accent'
+                    : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+                }`}
+              >
+                <Icon size={15} strokeWidth={1.7} />
+                <span className="flex-1">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="p-3 border-t border-border space-y-0.5 shrink-0">
+        <div className="p-3 border-t border-border space-y-0.5">
         {plan && (
           <div className="px-3 py-2 mb-1">
             <span className={`font-mono text-[10px] tracking-widest uppercase ${
@@ -201,6 +202,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
           <LogOut size={15} strokeWidth={1.7} />
           Sign out
         </button>
+        </div>
       </div>
     </aside>
   );
