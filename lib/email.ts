@@ -2,6 +2,49 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+export async function sendNotificationEmail(
+  email: string,
+  firstName: string,
+  title: string,
+  message: string,
+  link?: string,
+) {
+  if (!process.env.RESEND_API_KEY) return { success: false };
+  try {
+    const ctaHtml = link
+      ? `<div style="text-align:center;margin:28px 0;">
+           <a href="https://tradelogpro.xyz${link}"
+              style="display:inline-block;background-color:#00D9FF;color:#000000;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">
+             Open Dashboard
+           </a>
+         </div>`
+      : '';
+    await resend.emails.send({
+      from: 'TradeLog Pro <hello@tradelogpro.xyz>',
+      to: email,
+      subject: title,
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#0A0A0B;color:#FAFAFA;padding:40px 24px;">
+          <div style="text-align:center;margin-bottom:32px;">
+            <h1 style="font-size:24px;font-weight:700;margin:0;">Trade<span style="color:#22C55E;">Log</span> Pro</h1>
+            <p style="color:#A1A1AA;font-size:14px;margin-top:4px;">Journal smarter. Trade better.</p>
+          </div>
+          <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;">${title}</h2>
+          <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">Hi ${firstName},</p>
+          <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">${message}</p>
+          ${ctaHtml}
+          <hr style="border:none;border-top:1px solid #1F1F23;margin:32px 0;">
+          <p style="color:#71717A;font-size:12px;text-align:center;">TradeLog Pro · tradelogpro.xyz<br>Journal smarter. Trade better.</p>
+        </div>
+      `,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send notification email:', error);
+    return { success: false, error };
+  }
+}
+
 export async function sendWelcomeEmail(email: string, firstName: string) {
   try {
     await resend.emails.send({

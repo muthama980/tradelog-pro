@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -34,13 +34,15 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
   const supabase = createClient();
   const [plan, setPlan] = useState<string | null>(null);
   const [planIntent, setPlanIntent] = useState<string>('pro');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      supabase.from('profiles').select('plan, plan_intent').eq('id', user.id).single().then(({ data }) => {
+      supabase.from('profiles').select('plan, plan_intent, is_admin').eq('id', user.id).single().then(({ data }) => {
         if (data?.plan) setPlan(data.plan);
         if (data?.plan_intent) setPlanIntent(data.plan_intent);
+        if (data?.is_admin) setIsAdmin(true);
       });
     });
   }, []);
@@ -141,6 +143,20 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
           <Flag size={15} strokeWidth={1.7} />
           Report Issue
         </Link>
+        {isAdmin && (
+          <Link
+            href="/dashboard/admin/notifications"
+            onClick={onClose}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              pathname.startsWith('/dashboard/admin')
+                ? 'bg-accent/10 text-accent border-l-2 border-accent'
+                : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+            }`}
+          >
+            <Shield size={15} strokeWidth={1.7} />
+            Admin
+          </Link>
+        )}
         <button
           onClick={signOut}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text-muted hover:text-signal-red hover:bg-bg-elevated transition-colors"
