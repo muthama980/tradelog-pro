@@ -159,7 +159,7 @@ export default async function DashboardPage() {
 
         {(!trades || trades.length === 0) ? (
           <div className="p-12 text-center">
-            <BookOpen className="text-text-dim mx-auto mb-4" size={36} strokeWidth={1.5} />
+            <BookOpen className="text-text-muted mx-auto mb-4" size={36} strokeWidth={1.5} />
             <h4 className="font-bold text-xl text-text mb-2">No trades yet</h4>
             <p className="text-text-muted mb-6 max-w-sm mx-auto text-sm">
               Log your first trade. The journey of a thousand pips begins with a single entry.
@@ -171,7 +171,7 @@ export default async function DashboardPage() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase bg-bg-elevated">
+              <tr className="font-mono text-xs tracking-widest text-text-muted uppercase bg-bg-elevated">
                 <th className="text-left p-3">Symbol</th>
                 <th className="text-left p-3 hidden md:table-cell">Strategy</th>
                 <th className="text-left p-3 hidden lg:table-cell">Direction</th>
@@ -186,13 +186,13 @@ export default async function DashboardPage() {
                   <td className="p-3 font-mono text-sm text-text">{t.symbol}</td>
                   <td className="p-3 hidden md:table-cell">
                     {t.strategy && (
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-text-dim px-2 py-0.5 border border-border rounded">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-text-muted px-2 py-0.5 border border-border rounded">
                         {t.strategy}
                       </span>
                     )}
                   </td>
                   <td className="p-3 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
-                  <td className="p-3 hidden lg:table-cell font-mono text-xs text-text-dim">
+                  <td className="p-3 hidden lg:table-cell font-mono text-xs text-text-muted">
                     {new Date(t.opened_at).toLocaleDateString()}
                   </td>
                   <td className={`p-3 text-right font-mono text-sm tabular font-bold whitespace-nowrap ${Number(t.pnl) >= 0 ? 'text-signal-green' : 'text-signal-red'}`}>
@@ -200,7 +200,7 @@ export default async function DashboardPage() {
                   </td>
                   <td className="p-3 text-right whitespace-nowrap w-px">
                     <span className={`font-mono text-[10px] uppercase tracking-widest px-2 py-0.5 border rounded ${
-                      t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
+                      t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-muted'
                     }`}>
                       {t.status}
                     </span>
@@ -251,7 +251,7 @@ function GettingStartedCard({ hasTrades, hasConnection }: { hasTrades: boolean; 
     <div className="card rounded-xl p-6 mb-8 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
       <div className="flex items-center justify-between mb-5">
         <h3 className="font-bold text-base text-text">Getting Started</h3>
-        <span className="font-mono text-[10px] tracking-widest text-text-dim uppercase">
+        <span className="font-mono text-[10px] tracking-widest text-text-muted uppercase">
           {steps.filter(s => s.done).length}/{steps.length} complete
         </span>
       </div>
@@ -278,10 +278,10 @@ function GettingStartedCard({ hasTrades, hasConnection }: { hasTrades: boolean; 
               <p className={`text-sm font-semibold mb-0.5 ${step.done ? 'text-text-muted line-through' : 'text-text'}`}>
                 {step.title}
               </p>
-              <p className="text-xs text-text-dim leading-relaxed">{step.desc}</p>
+              <p className="text-xs text-text-muted leading-relaxed">{step.desc}</p>
             </div>
             {!step.done && (
-              <ArrowRight size={14} className="text-text-dim group-hover:text-accent shrink-0 mt-1 transition-colors" />
+              <ArrowRight size={14} className="text-text-muted group-hover:text-accent shrink-0 mt-1 transition-colors" />
             )}
           </Link>
         ))}

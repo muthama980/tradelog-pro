@@ -23,7 +23,7 @@ export default function OverviewChart({ trades }: { trades: any[] }) {
 
   if (!trades || trades.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-text-dim text-sm border border-dashed border-border rounded-lg">
+      <div className="h-64 flex items-center justify-center text-text-muted text-sm border border-dashed border-border rounded-lg">
         Your equity curve appears here once you've logged a few trades.
       </div>
     );

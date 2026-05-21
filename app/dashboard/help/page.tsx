@@ -226,7 +226,7 @@ export default function HelpPage() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-text text-sm">Take the Tour</p>
-          <p className="text-text-muted text-xs mt-0.5">
+          <p className="text-sm text-text-muted mt-0.5">
             New here? Take a quick guided tour of TradeLog Pro&apos;s features.
           </p>
         </div>
@@ -277,7 +277,7 @@ export default function HelpPage() {
                   {!isSearching && (
                     <ChevronDown
                       size={15}
-                      className={`text-text-dim transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+                      className={`text-text-muted transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
                     />
                   )}
                 </button>
@@ -302,7 +302,7 @@ export default function HelpPage() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-text text-sm">Still need help?</p>
-          <p className="text-text-muted text-xs mt-0.5">
+          <p className="text-sm text-text-muted mt-0.5">
             Contact our support team and we&apos;ll get back to you.
           </p>
         </div>

@@ -74,7 +74,7 @@ const DEMO_REPORT: Report = {
 function StatBox({ label, value, up }: { label: string; value: string; up?: boolean }) {
   return (
     <div className="border border-border rounded-lg bg-bg p-3">
-      <div className="mono-label mb-1 text-[9px]">{label}</div>
+      <div className="text-xs text-text-muted mb-1">{label}</div>
       <div className={`font-mono text-sm font-bold tabular flex items-center gap-1 ${up ? 'text-signal-green' : 'text-signal-red'}`}>
         {up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
         {value}
@@ -127,12 +127,12 @@ function ReportDisplay({ report }: { report: Report }) {
         <div className="flex items-center gap-2.5 mb-2">
           <Brain className="text-accent" size={16} />
           <span className="mono-label tracking-widest">Weekly Coach Report</span>
-          <span className="font-mono text-[9px] uppercase tracking-widest text-text-dim px-1.5 py-0.5 rounded border border-border bg-bg ml-1">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-text-muted px-1.5 py-0.5 rounded border border-border bg-bg ml-1">
             Sample Preview
           </span>
         </div>
         {report.week_start && (
-          <p className="font-mono text-xs text-text-dim">
+          <p className="font-mono text-xs text-text-muted">
             Week of{' '}
             {new Date(report.week_start).toLocaleDateString('en-US', {
               month: 'long', day: 'numeric', year: 'numeric',

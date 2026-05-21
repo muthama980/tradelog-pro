@@ -72,7 +72,7 @@ export default function ConnectedBrokers({ connections, disconnecting, onDisconn
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-text text-sm">{conn.broker_name}</span>
-                <span className="font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded border text-text-dim"
+                <span className="font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded border text-text-muted"
                   style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}>
                   {conn.platform}
                 </span>
@@ -80,9 +80,9 @@ export default function ConnectedBrokers({ connections, disconnecting, onDisconn
               </div>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="font-mono text-xs text-text-muted">{maskAccount(conn.account_number)}</span>
-                <span className="text-text-dim text-xs hidden sm:inline">{conn.server}</span>
+                <span className="text-text-muted text-xs hidden sm:inline">{conn.server}</span>
                 {conn.last_synced_at && (
-                  <span className="flex items-center gap-1 text-text-dim text-xs">
+                  <span className="flex items-center gap-1 text-text-muted text-xs">
                     <Clock size={10} /> {timeSince(conn.last_synced_at)}
                   </span>
                 )}

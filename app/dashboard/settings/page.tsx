@@ -35,7 +35,7 @@ export default async function SettingsPage() {
         <Row label="Email"        value={profile?.email || user?.email || '—'} />
         <Row label="Member since" value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '—'} />
         <div className="flex justify-between items-center py-3 border-b border-border/50 last:border-0">
-          <span className="mono-label">Plan</span>
+          <span className="text-sm text-text-muted">Plan</span>
           <SettingsPlanBadge plan={plan} />
         </div>
       </Section>
@@ -104,8 +104,8 @@ function Section({ icon: Icon, label, tone, children }: any) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center py-3 border-b border-border/50 last:border-0">
-      <span className="mono-label">{label}</span>
-      <span className="text-text-muted text-sm">{value}</span>
+      <span className="text-sm text-text-muted">{label}</span>
+      <span className="text-sm text-text">{value}</span>
     </div>
   );
 }
@@ -113,7 +113,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function SettingsPlanBadge({ plan }: { plan: string }) {
   if (plan === 'trial') {
     return (
-      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-border bg-bg-elevated text-text-dim">
+      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-widest uppercase px-2.5 py-1 rounded-full border border-border bg-bg-elevated text-text-muted">
         FREE TRIAL
       </span>
     );

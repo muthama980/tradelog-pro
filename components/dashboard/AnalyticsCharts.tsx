@@ -57,7 +57,7 @@ const SESSION_LABEL: Record<string, string> = {
 function SumCard({ label, value, color }: { label: string; value: string; color?: 'green' | 'red' }) {
   return (
     <div className="card rounded-xl p-4">
-      <p className="font-mono text-[10px] uppercase tracking-wider text-text-dim mb-1">{label}</p>
+      <p className="font-mono text-xs uppercase tracking-wider text-text-muted mb-1">{label}</p>
       <p className={`font-mono text-xl font-bold tabular ${color === 'green' ? 'text-signal-green' : color === 'red' ? 'text-signal-red' : 'text-text'}`}>
         {value}
       </p>
@@ -83,8 +83,8 @@ function BreakdownSection({ title, sub, items, totalPnl, ct }: {
 
       <ResponsiveContainer width="100%" height={chartH}>
         <BarChart data={sorted} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }}>
-          <XAxis type="number" stroke={ct.axisStroke} tickLine={false} fontSize={10} tick={{ fill: ct.tickColor }} tickFormatter={v => `$${v}`} />
-          <YAxis type="category" dataKey="name" stroke={ct.axisStroke} tickLine={false} axisLine={false} fontSize={10} width={84} tick={{ fill: ct.tickColor }} />
+          <XAxis type="number" stroke={ct.axisStroke} tickLine={false} fontSize={12} tick={{ fill: ct.tickColor }} tickFormatter={v => `$${v}`} />
+          <YAxis type="category" dataKey="name" stroke={ct.axisStroke} tickLine={false} axisLine={false} fontSize={12} width={84} tick={{ fill: ct.tickColor }} />
           <Tooltip contentStyle={ts} labelStyle={{ color: ct.tooltipLabel }} itemStyle={{ color: ct.tooltipText }} />
           <Bar dataKey="pnl" radius={[0, 4, 4, 0]}>
             {sorted.map((d, i) => <Cell key={i} fill={d.pnl >= 0 ? GREEN : RED} />)}
@@ -95,7 +95,7 @@ function BreakdownSection({ title, sub, items, totalPnl, ct }: {
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[380px]">
           <thead>
-            <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase border-b border-border">
+            <tr className="font-mono text-xs tracking-wider text-text-muted uppercase border-b border-border">
               <th className="text-left pb-2 pr-3">Name</th>
               <th className="text-right pb-2 px-2">Trades</th>
               <th className="text-right pb-2 px-2">Win%</th>
@@ -144,7 +144,7 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
 
   const isLight = theme === 'light';
   const axisStroke   = isLight ? '#D4D4D8' : '#27272A';
-  const tickColor    = isLight ? '#52525B' : '#71717A';
+  const tickColor    = isLight ? '#52525B' : '#A1A1AA';
   const tooltipBg    = isLight ? '#FFFFFF' : '#0A0A0B';
   const tooltipBorder = isLight ? '#E4E4E7' : '#00D9FF';
   const tooltipText  = isLight ? '#09090B' : '#FAFAFA';
@@ -296,8 +296,8 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
           {RANGES.map(r => (
             <button
               key={r} onClick={() => setTimeRange(r)}
-              className={`font-mono text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md transition-colors whitespace-nowrap ${
-                timeRange === r ? 'bg-accent text-bg font-black' : 'text-text-dim hover:text-text'
+              className={`font-mono text-sm font-medium py-2 px-4 rounded-md transition-colors whitespace-nowrap ${
+                timeRange === r ? 'bg-accent text-bg font-semibold' : 'text-text-muted hover:text-text'
               }`}
             >
               {r}
@@ -318,17 +318,17 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
                 <>
                   <button onClick={() => doExport('view')} className="w-full text-left px-4 py-3 hover:bg-bg-elevated transition-colors">
                     <p className="text-sm font-medium text-text">Export Current View</p>
-                    <p className="text-xs text-text-dim mt-0.5">Trades in selected time range</p>
+                    <p className="text-xs text-text-muted mt-0.5">Trades in selected time range</p>
                   </button>
                   <div className="h-px bg-border" />
                   <button onClick={() => setExportMode('range')} className="w-full text-left px-4 py-3 hover:bg-bg-elevated transition-colors">
                     <p className="text-sm font-medium text-text">Export Date Range</p>
-                    <p className="text-xs text-text-dim mt-0.5">Choose a custom from / to date</p>
+                    <p className="text-xs text-text-muted mt-0.5">Choose a custom from / to date</p>
                   </button>
                   <div className="h-px bg-border" />
                   <button onClick={() => doExport('all')} className="w-full text-left px-4 py-3 hover:bg-bg-elevated transition-colors">
                     <p className="text-sm font-medium text-text">Export All Trades</p>
-                    <p className="text-xs text-text-dim mt-0.5">All {allTrades.length} closed trades</p>
+                    <p className="text-xs text-text-muted mt-0.5">All {allTrades.length} closed trades</p>
                   </button>
                 </>
               ) : (
@@ -369,7 +369,7 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
         <p className="mono-label mb-5">Cumulative P&L — {ft.length} closed trades</p>
         {ft.length === 0 ? (
           <div className="h-[250px] flex items-center justify-center">
-            <p className="text-text-dim text-sm">No trades in this period</p>
+            <p className="text-text-muted text-sm">No trades in this period</p>
           </div>
         ) : (
           <div className="h-[250px] md:h-[350px]">
@@ -390,13 +390,13 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
                 <CartesianGrid stroke={axisStroke} strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="dateLabel"
-                  tick={{ fill: tickColor, fontSize: 10, fontFamily: 'var(--font-geist-mono)' }}
+                  tick={{ fill: tickColor, fontSize: 12, fontFamily: 'var(--font-geist-mono)' }}
                   axisLine={{ stroke: axisStroke }} tickLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
                   domain={[yMin, yMax]}
-                  tick={{ fill: tickColor, fontSize: 10, fontFamily: 'var(--font-geist-mono)' }}
+                  tick={{ fill: tickColor, fontSize: 12, fontFamily: 'var(--font-geist-mono)' }}
                   axisLine={{ stroke: axisStroke }} tickLine={false}
                   tickFormatter={v => `$${v}`} width={68}
                 />
@@ -465,7 +465,7 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
               <div className="flex items-center justify-between p-3 rounded-lg bg-signal-green/8 border border-signal-green/20">
                 <div>
                   <span className="font-mono text-xs text-signal-green uppercase tracking-wider">Clean trades</span>
-                  <span className="text-text-dim text-xs ml-2">({cleanCount} trades, no mistakes)</span>
+                  <span className="text-text-muted text-xs ml-2">({cleanCount} trades, no mistakes)</span>
                 </div>
                 <span className="font-mono text-sm font-bold text-signal-green tabular">+${cleanPnl.toFixed(2)}</span>
               </div>
@@ -474,7 +474,7 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
               <div key={d.mistake} className="flex items-center justify-between p-3 rounded-lg bg-signal-red/8 border border-signal-red/20">
                 <div>
                   <span className="font-mono text-xs text-signal-red uppercase tracking-wider">{d.mistake}</span>
-                  <span className="text-text-dim text-xs ml-2">({d.count} {d.count === 1 ? 'trade' : 'trades'})</span>
+                  <span className="text-text-muted text-xs ml-2">({d.count} {d.count === 1 ? 'trade' : 'trades'})</span>
                 </div>
                 <span className="font-mono text-sm font-bold text-signal-red tabular">${d.pnl.toFixed(2)}</span>
               </div>
@@ -483,8 +483,8 @@ export default function AnalyticsCharts({ trades: allTrades }: { trades: any[] }
               <div className="mt-4 pt-4 border-t border-border">
                 <ResponsiveContainer width="100%" height={Math.max(150, mistakeData.length * 40)}>
                   <BarChart data={mistakeData} layout="vertical">
-                    <XAxis type="number" stroke={axisStroke} tickLine={false} fontSize={11} tick={{ fill: tickColor }} />
-                    <YAxis type="category" dataKey="mistake" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={10} width={120} tick={{ fill: tickColor }} />
+                    <XAxis type="number" stroke={axisStroke} tickLine={false} fontSize={12} tick={{ fill: tickColor }} />
+                    <YAxis type="category" dataKey="mistake" stroke={axisStroke} tickLine={false} axisLine={false} fontSize={12} width={120} tick={{ fill: tickColor }} />
                     <Tooltip contentStyle={ts} labelStyle={{ color: tooltipLabel }} itemStyle={{ color: tooltipText }} />
                     <Bar dataKey="pnl" radius={[0, 4, 4, 0]} fill={RED} />
                   </BarChart>

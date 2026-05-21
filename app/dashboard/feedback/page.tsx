@@ -96,7 +96,7 @@ export default function FeedbackPage() {
               className="w-full text-sm text-text-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border file:border-border file:bg-bg-elevated file:text-text-muted file:font-mono file:text-[11px] file:uppercase file:tracking-widest hover:file:text-text hover:file:border-accent/40 transition"
             />
             {screenshot && (
-              <p className="mt-2 font-mono text-[11px] text-text-dim">{screenshot.name}</p>
+              <p className="mt-2 font-mono text-xs text-text-muted">{screenshot.name}</p>
             )}
           </div>
 

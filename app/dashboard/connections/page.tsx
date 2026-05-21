@@ -357,7 +357,7 @@ export default function ConnectionsPage() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-text text-sm">{name}</div>
-            <div className="text-text-dim text-xs mt-0.5">{hint}</div>
+            <div className="text-text-muted text-xs mt-0.5">{hint}</div>
           </div>
           {!loading && (
             <span className={`flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest shrink-0 ${
@@ -372,7 +372,7 @@ export default function ConnectionsPage() {
         </div>
 
         {conn?.last_synced_at && (
-          <div className="flex items-center gap-1.5 text-text-dim text-xs">
+          <div className="flex items-center gap-1.5 text-text-muted text-xs">
             <Clock size={11} /> Last synced {timeSince(conn.last_synced_at)}
           </div>
         )}
@@ -444,7 +444,7 @@ export default function ConnectionsPage() {
                 New
               </span>
             </div>
-            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+            <div className="text-text-muted text-xs mt-0.5">{method.hint}</div>
           </div>
           <ChevronRight size={15} className="text-accent shrink-0" />
         </button>
@@ -466,11 +466,11 @@ export default function ConnectionsPage() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-text text-sm">{method.name}</div>
-            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+            <div className="text-text-muted text-xs mt-0.5">{method.hint}</div>
           </div>
           {isSelected
             ? <CheckCircle size={15} className="text-accent shrink-0" />
-            : <ChevronRight size={15} className="text-text-dim shrink-0" />
+            : <ChevronRight size={15} className="text-text-muted shrink-0" />
           }
         </button>
       );
@@ -489,7 +489,7 @@ export default function ConnectionsPage() {
                 Soon
               </span>
             </div>
-            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+            <div className="text-text-muted text-xs mt-0.5">{method.hint}</div>
           </div>
           <button
             onClick={showNotify}
@@ -514,9 +514,9 @@ export default function ConnectionsPage() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-text text-sm">{method.name}</div>
-            <div className="text-text-dim text-xs mt-0.5">{method.hint}</div>
+            <div className="text-text-muted text-xs mt-0.5">{method.hint}</div>
           </div>
-          <ChevronRight size={15} className="text-text-dim shrink-0" />
+          <ChevronRight size={15} className="text-text-muted shrink-0" />
         </Link>
       );
     }
@@ -553,7 +553,7 @@ export default function ConnectionsPage() {
           >
             <div className="text-xl font-mono font-black text-accent mb-3">{market.symbol}</div>
             <div className="font-semibold text-text text-sm">{market.name}</div>
-            <div className="text-text-dim text-xs mt-0.5">{market.description}</div>
+            <div className="text-text-muted text-xs mt-0.5">{market.description}</div>
             {selectedMarket === market.id && (
               <div className="mt-2">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-accent">Selected ↓</span>
@@ -614,7 +614,7 @@ export default function ConnectionsPage() {
                     <p className="text-sm text-text-muted">
                       Drop your CSV here or <span className="text-accent">browse files</span>
                     </p>
-                    <p className="text-xs text-text-dim mt-1">.csv files only</p>
+                    <p className="text-xs text-text-muted mt-1">.csv files only</p>
                   </div>
                   {parseError && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-signal-red/10 border border-signal-red/20 mt-4">
@@ -635,7 +635,7 @@ export default function ConnectionsPage() {
                   <p className="font-semibold text-text text-sm">
                     {previewTrades.length} trade{previewTrades.length !== 1 ? 's' : ''} ready to import
                   </p>
-                  <p className="text-xs text-text-dim mt-0.5">
+                  <p className="text-xs text-text-muted mt-0.5">
                     Showing first {Math.min(10, previewTrades.length)} of {previewTrades.length}
                   </p>
                 </div>
@@ -648,7 +648,7 @@ export default function ConnectionsPage() {
                   <thead>
                     <tr className="border-b border-border bg-bg-elevated">
                       {['Symbol', 'Dir', 'Entry', 'Size', 'Fees', 'Date'].map(h => (
-                        <th key={h} className={`px-4 py-2.5 text-text-dim font-mono text-[10px] uppercase tracking-wider whitespace-nowrap ${
+                        <th key={h} className={`px-4 py-2.5 text-text-muted font-mono text-xs uppercase tracking-wider whitespace-nowrap ${
                           ['Entry', 'Size', 'Fees'].includes(h) ? 'text-right' : 'text-left'
                         } ${h === 'Date' ? 'hidden sm:table-cell' : ''}`}>
                           {h}
@@ -676,7 +676,7 @@ export default function ConnectionsPage() {
                   </tbody>
                 </table>
                 {previewTrades.length > 10 && (
-                  <div className="px-4 py-3 text-center text-text-dim text-xs border-t border-border">
+                  <div className="px-4 py-3 text-center text-text-muted text-xs border-t border-border">
                     and {previewTrades.length - 10} more…
                   </div>
                 )}
@@ -771,7 +771,7 @@ export default function ConnectionsPage() {
             </div>
 
             <div className="mb-6 p-4 rounded-xl bg-bg-elevated border border-border">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-text-dim mb-3">Setup Instructions</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-text-muted mb-3">Setup Instructions</p>
               <ol className="space-y-2">
                 {modalMeta.instructions.map((step, i) => (
                   <li key={i} className="flex gap-2.5 text-sm text-text-muted">

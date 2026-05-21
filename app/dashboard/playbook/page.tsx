@@ -266,7 +266,7 @@ export default function PlaybookPage() {
 
   const isLight      = theme === 'light';
   const axisStroke   = isLight ? '#D4D4D8' : '#27272A';
-  const tickColor    = isLight ? '#52525B' : '#71717A';
+  const tickColor    = isLight ? '#52525B' : '#A1A1AA';
   const tooltipBg    = isLight ? '#FFFFFF' : '#0A0A0B';
   const tooltipBorder = isLight ? '#E4E4E7' : '#00D9FF';
   const tooltipText  = isLight ? '#09090B' : '#FAFAFA';
@@ -410,7 +410,7 @@ export default function PlaybookPage() {
 
           {playbooks.length === 0 ? (
             <div className="card rounded-xl p-16 text-center">
-              <BookOpen size={40} className="text-text-dim mx-auto mb-4" strokeWidth={1.2} />
+              <BookOpen size={40} className="text-text-muted mx-auto mb-4" strokeWidth={1.2} />
               <p className="font-bold text-xl text-text mb-2">No strategies yet.</p>
               <p className="text-text-muted text-sm mb-6 max-w-sm mx-auto">
                 Create your first strategy playbook to start tracking performance against your trades.
@@ -437,7 +437,7 @@ export default function PlaybookPage() {
                             </span>
                           )}
                           {pb.timeframe && (
-                            <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border text-text-dim rounded-full">
+                            <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border text-text-muted rounded-full">
                               {pb.timeframe}
                             </span>
                           )}
@@ -571,8 +571,8 @@ export default function PlaybookPage() {
                 {TIME_RANGES.map(r => (
                   <button
                     key={r} onClick={() => setTimeRange(r)}
-                    className={`font-mono text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-md transition-colors ${
-                      timeRange === r ? 'bg-accent text-bg font-black' : 'text-text-dim hover:text-text'
+                    className={`font-mono text-sm font-medium py-2 px-4 rounded-md transition-colors ${
+                      timeRange === r ? 'bg-accent text-bg font-semibold' : 'text-text-muted hover:text-text'
                     }`}
                   >
                     {r}
@@ -583,7 +583,7 @@ export default function PlaybookPage() {
 
             {stats?.total === 0 ? (
               <div className="card rounded-xl p-12 text-center">
-                <TrendingUp size={32} className="text-text-dim mx-auto mb-3" strokeWidth={1.2} />
+                <TrendingUp size={32} className="text-text-muted mx-auto mb-3" strokeWidth={1.2} />
                 <p className="font-bold text-text mb-1">No trades yet</p>
                 <p className="text-text-muted text-sm max-w-sm mx-auto">
                   Tag trades with <span className="text-accent">"{selected.name}"</span> in the Journal to see performance here.
@@ -619,11 +619,11 @@ export default function PlaybookPage() {
                         </defs>
                         <XAxis
                           dataKey="i"
-                          tick={{ fill: tickColor, fontSize: 10, fontFamily: 'var(--font-geist-mono)' }}
+                          tick={{ fill: tickColor, fontSize: 12, fontFamily: 'var(--font-geist-mono)' }}
                           axisLine={{ stroke: axisStroke }} tickLine={false}
                         />
                         <YAxis
-                          tick={{ fill: tickColor, fontSize: 10, fontFamily: 'var(--font-geist-mono)' }}
+                          tick={{ fill: tickColor, fontSize: 12, fontFamily: 'var(--font-geist-mono)' }}
                           axisLine={{ stroke: axisStroke }} tickLine={false}
                           tickFormatter={v => `$${v}`} width={60}
                         />
@@ -652,7 +652,7 @@ export default function PlaybookPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[480px]">
                       <thead>
-                        <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase border-b border-border bg-bg-elevated">
+                        <tr className="font-mono text-xs tracking-wider text-text-muted uppercase border-b border-border bg-bg-elevated">
                           <th className="text-left px-5 py-3">Date</th>
                           <th className="text-left px-5 py-3">Symbol</th>
                           <th className="text-left px-5 py-3">Dir</th>
@@ -663,14 +663,14 @@ export default function PlaybookPage() {
                       <tbody>
                         {stats.recentTrades.map(t => (
                           <tr key={t.id} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
-                            <td className="px-5 py-3 font-mono text-[11px] text-text-dim whitespace-nowrap">
+                            <td className="px-5 py-3 font-mono text-xs text-text-muted whitespace-nowrap">
                               {new Date(t.opened_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                             </td>
                             <td className="px-5 py-3 font-mono text-sm text-text">{t.symbol}</td>
                             <td className="px-5 py-3 text-sm text-text-muted capitalize">{t.direction}</td>
                             <td className="px-5 py-3 hidden sm:table-cell">
                               {t.emotion && (
-                                <span className={`font-mono text-[10px] uppercase tracking-wider ${
+                                <span className={`font-mono text-xs uppercase tracking-wider ${
                                   POSITIVE_EMOTIONS.includes(t.emotion) ? 'text-signal-green' : 'text-signal-red'
                                 }`}>
                                   {t.emotion}
@@ -700,7 +700,7 @@ export default function PlaybookPage() {
 function FF({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mono-label mb-2 block">{label}</label>
+      <label className="text-sm font-medium text-text-muted mb-2 block">{label}</label>
       {children}
     </div>
   );
@@ -735,7 +735,7 @@ function colorClass(c: Color) {
 function StatMini({ label, value, color }: { label: string; value: string; color?: Color }) {
   return (
     <div>
-      <p className="font-mono text-[10px] uppercase tracking-wider text-text-dim mb-0.5">{label}</p>
+      <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted mb-0.5">{label}</p>
       <p className={`font-mono text-sm font-bold tabular ${colorClass(color)}`}>{value}</p>
     </div>
   );
@@ -744,7 +744,7 @@ function StatMini({ label, value, color }: { label: string; value: string; color
 function StatCard({ label, value, color }: { label: string; value: string; color?: Color }) {
   return (
     <div className="card rounded-xl p-4">
-      <p className="font-mono text-[10px] uppercase tracking-wider text-text-dim mb-1">{label}</p>
+      <p className="font-mono text-xs uppercase tracking-wider text-text-muted mb-1">{label}</p>
       <p className={`font-mono text-lg font-bold tabular ${colorClass(color)}`}>{value}</p>
     </div>
   );

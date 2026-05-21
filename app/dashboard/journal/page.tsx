@@ -420,7 +420,7 @@ export default function JournalPage() {
                   </div>
                   {form.emotion && (
                     <button type="button" onClick={() => setForm({ ...form, emotion: '' })}
-                      className="font-mono text-[10px] text-text-dim hover:text-text transition">
+                      className="font-mono text-[10px] text-text-muted hover:text-text transition">
                       × clear emotion
                     </button>
                   )}
@@ -512,7 +512,7 @@ export default function JournalPage() {
       {/* ── Trade list ──────────────────────────────────────────────────── */}
       <div className="card rounded-xl overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-text-dim">Loading…</div>
+          <div className="p-12 text-center text-text-muted">Loading…</div>
         ) : trades.length === 0 ? (
           <div className="p-14 text-center">
             <p className="font-bold text-xl text-text mb-2">Your journal is blank.</p>
@@ -525,7 +525,7 @@ export default function JournalPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px]">
               <thead>
-                <tr className="font-mono text-[10px] tracking-widest text-text-dim uppercase border-b border-border bg-bg-elevated">
+                <tr className="font-mono text-xs tracking-widest text-text-muted uppercase border-b border-border bg-bg-elevated">
                   <th className="p-4 w-10">
                     <input
                       type="checkbox"
@@ -559,24 +559,24 @@ export default function JournalPage() {
                       </td>
                       <td className="p-4">
                         <div className="font-mono text-sm text-text">{t.symbol}</div>
-                        <div className="font-mono text-[10px] text-text-dim uppercase tracking-wider">{t.market}</div>
+                        <div className="font-mono text-xs text-text-muted uppercase tracking-wider">{t.market}</div>
                         {t.trading_session && (
-                          <div className="font-mono text-[9px] text-accent/70 uppercase tracking-wider mt-0.5">
+                          <div className="font-mono text-[10px] text-accent uppercase tracking-wider mt-0.5">
                             {TRADING_SESSIONS.find(s => s.value === t.trading_session)?.label ?? t.trading_session}
                           </div>
                         )}
                         {t.broker && (
-                          <div className="font-mono text-[9px] text-text-dim uppercase tracking-wider mt-0.5">{t.broker}</div>
+                          <div className="font-mono text-xs text-text-muted uppercase tracking-wider mt-0.5">{t.broker}</div>
                         )}
                         {t.mistakes && t.mistakes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {t.mistakes.slice(0, 2).map((m: string) => (
-                              <span key={m} className="font-mono text-[9px] uppercase tracking-wider text-signal-red/70 border border-signal-red/20 px-1.5 py-px rounded">
+                              <span key={m} className="font-mono text-[10px] uppercase tracking-wider text-signal-red border border-signal-red/20 px-1.5 py-0.5 rounded">
                                 {m}
                               </span>
                             ))}
                             {t.mistakes.length > 2 && (
-                              <span className="font-mono text-[9px] text-text-dim">+{t.mistakes.length - 2}</span>
+                              <span className="font-mono text-xs text-text-muted">+{t.mistakes.length - 2}</span>
                             )}
                           </div>
                         )}
@@ -584,7 +584,7 @@ export default function JournalPage() {
                       <td className="p-4 hidden lg:table-cell text-sm text-text-muted capitalize">{t.direction}</td>
                       <td className="p-4 hidden md:table-cell">
                         {t.strategy && (
-                          <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border rounded text-text-dim">
+                          <span className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border border-border rounded text-text-muted">
                             {t.strategy}
                           </span>
                         )}
@@ -604,15 +604,15 @@ export default function JournalPage() {
                       </td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded ${
-                          t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-dim'
+                          t.status === 'open' ? 'border-accent/40 text-accent' : 'border-border text-text-muted'
                         }`}>{t.status}</span>
                       </td>
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-3">
-                          <button onClick={() => startEdit(t)} className="text-text-dim hover:text-accent text-xs transition flex items-center gap-1">
-                            <Pencil size={11} /> Edit
+                          <button onClick={() => startEdit(t)} className="text-text-muted hover:text-accent text-sm transition flex items-center gap-1">
+                            <Pencil size={12} /> Edit
                           </button>
-                          <button onClick={() => remove(t.id)} className="text-text-dim hover:text-signal-red text-xs transition">
+                          <button onClick={() => remove(t.id)} className="text-text-muted hover:text-signal-red text-sm transition">
                             Delete
                           </button>
                         </div>
@@ -635,7 +635,7 @@ export default function JournalPage() {
           <div className="h-4 w-px bg-border" />
           <button
             onClick={() => setSelectedIds([])}
-            className="font-mono text-[11px] text-text-dim hover:text-text transition tracking-wider"
+            className="font-mono text-[11px] text-text-muted hover:text-text transition tracking-wider"
           >
             Clear
           </button>
@@ -655,7 +655,7 @@ export default function JournalPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mono-label mb-2 block">{label}</label>
+      <label className="text-sm font-medium text-text-muted mb-2 block">{label}</label>
       {children}
     </div>
   );

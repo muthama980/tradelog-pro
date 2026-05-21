@@ -137,8 +137,8 @@ export default function NotificationBell() {
           <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-3">
-                <BellOff size={28} className="text-text-dim" strokeWidth={1.5} />
-                <p className="text-sm text-text-dim">No notifications yet</p>
+                <BellOff size={28} className="text-text-muted" strokeWidth={1.5} />
+                <p className="text-sm text-text-muted">No notifications yet</p>
               </div>
             ) : (
               <ul className="divide-y divide-border/50">
@@ -180,7 +180,7 @@ export default function NotificationBell() {
             <div className="px-4 py-2.5 border-t border-border shrink-0">
               <button
                 onClick={clearAll}
-                className="font-mono text-[10px] tracking-widest text-text-dim uppercase hover:text-signal-red transition-colors"
+                className="font-mono text-[10px] tracking-widest text-text-muted uppercase hover:text-signal-red transition-colors"
               >
                 Clear all
               </button>

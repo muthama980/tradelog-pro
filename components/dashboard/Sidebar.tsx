@@ -97,7 +97,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
         {plan && (
           <div className="px-3 py-2 mb-1">
             <span className={`font-mono text-[10px] tracking-widest uppercase ${
-              plan === 'cancelled' ? 'text-signal-red' : plan === 'trial' ? 'text-text-dim' : 'text-accent'
+              plan === 'cancelled' ? 'text-signal-red' : plan === 'trial' ? 'text-text-muted' : 'text-accent'
             }`}>
               {plan === 'trial'
                 ? `Trial · ${planIntent === 'core' ? 'Core' : 'Pro'}`

@@ -162,7 +162,7 @@ export default function RiskStatus() {
       </div>
       <div className="flex-1 min-w-0">
         <p className={`font-semibold text-sm ${c.text}`}>{state.headline}</p>
-        <p className="text-text-dim text-xs mt-1 italic">"{state.tip}"</p>
+        <p className="text-text-muted text-xs mt-1 italic">"{state.tip}"</p>
       </div>
     </div>
   );
