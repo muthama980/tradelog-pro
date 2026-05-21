@@ -15,7 +15,9 @@
       "Bash(grep *)",
       "Skill(vercel:deploy)",
       "Bash(vercel --version)",
-      "Bash(npm i *)"
+      "Bash(npm i *)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\('Sparkles:', !!l.Sparkles, 'BellOff:', !!l.BellOff, 'CheckCircle:', !!l.CheckCircle\\)\")",
+      "Bash(vercel *)"
     ]
   }
 }
