@@ -39,7 +39,8 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      supabase.from('profiles').select('plan, plan_intent, is_admin').eq('id', user.id).single().then(({ data }) => {
+      supabase.from('profiles').select('plan, plan_intent, is_admin').eq('id', user.id).single().then(({ data, error }) => {
+        console.log('Profile data:', data, 'Error:', error);
         if (data?.plan) setPlan(data.plan);
         if (data?.plan_intent) setPlanIntent(data.plan_intent);
         if (data?.is_admin) setIsAdmin(true);
