@@ -5,11 +5,15 @@ import {
   BookOpen, Plus, X, Loader2, ChevronLeft, MoreVertical,
   Pencil, Archive, Trash2, Play, Pause, TrendingUp,
 } from 'lucide-react';
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { useTheme } from '@/components/ThemeProvider';
+import { CardSkeleton, ChartSkeleton } from '@/components/dashboard/Skeleton';
+
+const PlaybookEquityChart = dynamic(() => import('@/components/dashboard/PlaybookEquityChart'), {
+  loading: () => <div className="h-52 animate-pulse bg-bg-elevated rounded-lg" />,
+  ssr: false,
+});
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -389,8 +393,18 @@ export default function PlaybookPage() {
 
       {/* Loading */}
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="animate-spin text-accent" size={28} />
+        <div>
+          <div className="flex items-start justify-between mb-8 gap-4 animate-pulse">
+            <div>
+              <div className="h-3 bg-bg-elevated rounded w-20 mb-3"></div>
+              <div className="h-8 bg-bg-elevated rounded w-80 mb-2"></div>
+              <div className="h-8 bg-bg-elevated rounded w-64"></div>
+            </div>
+            <div className="h-10 bg-bg-elevated rounded w-32 shrink-0"></div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
+          </div>
         </div>
 
       ) : view === 'list' ? (
@@ -609,38 +623,15 @@ export default function PlaybookPage() {
                 <div className="card rounded-xl p-6 mb-5">
                   <h3 className="font-bold text-base text-text mb-4">Equity Curve</h3>
                   <div className="h-52">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={stats.equity} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                        <defs>
-                          <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%"  stopColor="#00D9FF" stopOpacity={0.15} />
-                            <stop offset="95%" stopColor="#00D9FF" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <XAxis
-                          dataKey="i"
-                          tick={{ fill: tickColor, fontSize: 12, fontFamily: 'var(--font-geist-mono)' }}
-                          axisLine={{ stroke: axisStroke }} tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fill: tickColor, fontSize: 12, fontFamily: 'var(--font-geist-mono)' }}
-                          axisLine={{ stroke: axisStroke }} tickLine={false}
-                          tickFormatter={v => `$${v}`} width={60}
-                        />
-                        <Tooltip
-                          contentStyle={{ background: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8, fontFamily: 'var(--font-geist-mono)', fontSize: 12, color: tooltipText }}
-                          labelStyle={{ color: tooltipLbl }}
-                          itemStyle={{ color: tooltipText }}
-                          formatter={(v: any) => [`$${Number(v).toFixed(2)}`, 'Cumulative P&L']}
-                          labelFormatter={(l: any) => `Trade #${l}`}
-                        />
-                        <Area
-                          type="monotone" dataKey="pnl"
-                          stroke="#00D9FF" fill="url(#eqGrad)"
-                          strokeWidth={1.5} dot={false}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <PlaybookEquityChart
+                      equity={stats.equity}
+                      axisStroke={axisStroke}
+                      tickColor={tickColor}
+                      tooltipBg={tooltipBg}
+                      tooltipBorder={tooltipBorder}
+                      tooltipText={tooltipText}
+                      tooltipLbl={tooltipLbl}
+                    />
                   </div>
                 </div>
 

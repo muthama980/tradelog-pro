@@ -1,32 +1,25 @@
 import { createClient } from '@/lib/supabase/server';
 import { TrendingUp, TrendingDown, Plus, BookOpen, Star, Trophy, CheckCircle2, Circle, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import DailyQuote from '@/components/DailyQuote';
-import OverviewChart from '@/components/dashboard/OverviewChart';
 import RiskStatus from '@/components/dashboard/RiskStatus';
 import UpgradeButton from '@/components/dashboard/UpgradeButton';
+
+const OverviewChart = dynamic(() => import('@/components/dashboard/OverviewChart'), {
+  loading: () => <div className="h-64 animate-pulse bg-bg-elevated rounded-lg" />,
+  ssr: false,
+});
 
 export default async function DashboardPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user!.id)
-    .single();
-
-  const { data: trades } = await supabase
-    .from('trades')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('opened_at', { ascending: false });
-
-  const { data: connections } = await supabase
-    .from('exchange_connections')
-    .select('id')
-    .eq('user_id', user!.id)
-    .limit(1);
+  const [{ data: profile }, { data: trades }, { data: connections }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user!.id).single(),
+    supabase.from('trades').select('*').eq('user_id', user!.id).order('opened_at', { ascending: false }),
+    supabase.from('exchange_connections').select('id').eq('user_id', user!.id).limit(1),
+  ]);
 
   const closed   = (trades || []).filter((t: any) => t.status === 'closed');
   const wins     = closed.filter((t: any) => Number(t.pnl) > 0);

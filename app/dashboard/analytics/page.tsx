@@ -1,5 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
-import AnalyticsCharts from '@/components/dashboard/AnalyticsCharts';
+import dynamic from 'next/dynamic';
+import { ChartSkeleton } from '@/components/dashboard/Skeleton';
+
+const AnalyticsCharts = dynamic(() => import('@/components/dashboard/AnalyticsCharts'), {
+  loading: () => (
+    <div className="space-y-5">
+      {Array.from({ length: 3 }).map((_, i) => <ChartSkeleton key={i} />)}
+    </div>
+  ),
+  ssr: false,
+});
 
 export default async function AnalyticsPage() {
   const supabase = createClient();

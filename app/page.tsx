@@ -1,13 +1,15 @@
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Hero from '@/components/landing/Hero';
 import Features from '@/components/landing/Features';
-import ProductShowcase from '@/components/landing/ProductShowcase';
-import Comparison from '@/components/landing/Comparison';
-import QuoteSection from '@/components/landing/QuoteSection';
-import Pricing from '@/components/landing/Pricing';
-import FAQ from '@/components/landing/FAQ';
-import FinalCTA from '@/components/landing/FinalCTA';
+
+const ProductShowcase = dynamic(() => import('@/components/landing/ProductShowcase'));
+const Comparison      = dynamic(() => import('@/components/landing/Comparison'));
+const QuoteSection    = dynamic(() => import('@/components/landing/QuoteSection'));
+const Pricing         = dynamic(() => import('@/components/landing/Pricing'));
+const FAQ             = dynamic(() => import('@/components/landing/FAQ'));
+const FinalCTA        = dynamic(() => import('@/components/landing/FinalCTA'));
 
 export default function HomePage() {
   return (
