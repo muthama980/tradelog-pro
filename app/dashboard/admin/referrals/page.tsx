@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   Shield, Plus, Loader2, Check, AlertTriangle, ChevronLeft,
   ToggleLeft, ToggleRight, Trash2, X, Users, DollarSign,
-  TrendingUp, Link2, ChevronDown, ChevronUp,
+  TrendingUp, Link2, ChevronDown, ChevronUp, Copy,
 } from 'lucide-react';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
 
@@ -31,7 +31,7 @@ interface Referral {
 
 interface Overview {
   partnerLinks: number; userLinks: number; totalReferred: number;
-  totalSubscribed: number; totalOwed: number; totalPaid: number;
+  onTrial: number; totalSubscribed: number; totalOwed: number; totalPaid: number;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -42,13 +42,13 @@ const TYPE_BADGE: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  signed_up:  'border-amber-400/30 bg-amber-400/10 text-amber-400',
+  signed_up:  'border-blue-400/30 bg-blue-400/10 text-blue-400',
   subscribed: 'border-signal-green/30 bg-signal-green/10 text-signal-green',
   churned:    'border-signal-red/30 bg-signal-red/10 text-signal-red',
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  signed_up: 'Signed Up', subscribed: 'Subscribed', churned: 'Churned',
+  signed_up: 'Trial', subscribed: 'Subscribed', churned: 'Churned',
 };
 
 const METHODS = ['M-Pesa', 'PayPal', 'Crypto', 'Manual'];
@@ -87,8 +87,15 @@ export default function AdminReferralsPage() {
   const [payNotes,   setPayNotes]   = useState('');
   const [paying,     setPaying]     = useState(false);
 
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [toast,      setToast]      = useState<string | null>(null);
   const [toastErr,   setToastErr]   = useState<string | null>(null);
+
+  function copyRefUrl(code: string) {
+    navigator.clipboard.writeText(`https://tradelogpro.xyz/signup?ref=${code}`);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  }
 
   function showToast(msg: string, err = false) {
     if (err) { setToastErr(msg); setTimeout(() => setToastErr(null), 4000); }
@@ -309,10 +316,16 @@ export default function AdminReferralsPage() {
       ) : overview && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           {[
-            { label: 'Partner Links',    val: overview.partnerLinks,                     icon: Link2,       color: 'text-accent' },
-            { label: 'User Links',       val: overview.userLinks,                        icon: Link2,       color: 'text-text-muted' },
             { label: 'Total Referred',   val: overview.totalReferred,                    icon: Users,       color: 'text-text-muted' },
-            { label: 'Total Subscribed', val: overview.totalSubscribed,                  icon: TrendingUp,  color: 'text-signal-green' },
+            { label: 'On Trial',         val: overview.onTrial,                          icon: TrendingUp,  color: 'text-blue-400' },
+            { label: 'Subscribed',       val: overview.totalSubscribed,                  icon: TrendingUp,  color: 'text-signal-green' },
+            {
+              label: 'Conversion Rate',
+              val: overview.totalReferred > 0
+                ? `${Math.round((overview.totalSubscribed / overview.totalReferred) * 100)}%`
+                : '—',
+              icon: TrendingUp, color: 'text-accent',
+            },
             { label: 'Commission Owed',  val: `$${overview.totalOwed.toFixed(2)}`,       icon: DollarSign,  color: 'text-amber-400' },
             { label: 'Total Paid Out',   val: `$${overview.totalPaid.toFixed(2)}`,       icon: DollarSign,  color: 'text-signal-green' },
           ].map((k, i) => {
@@ -344,6 +357,15 @@ export default function AdminReferralsPage() {
             <div>
               <div className="flex items-center gap-3 flex-wrap mb-2">
                 <h2 className="text-2xl font-bold text-text tracking-tight font-mono">{selectedLink.code}</h2>
+                <button
+                  onClick={() => copyRefUrl(selectedLink.code)}
+                  className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-lg border border-border text-text-muted hover:border-accent/40 hover:text-accent transition"
+                  title="Copy full referral URL"
+                >
+                  {copiedCode === selectedLink.code
+                    ? <><Check size={11} className="text-signal-green" /> Copied</>
+                    : <><Copy size={11} /> Copy URL</>}
+                </button>
                 <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded-full ${TYPE_BADGE[selectedLink.type]}`}>
                   {selectedLink.type}
                 </span>
@@ -594,7 +616,18 @@ export default function AdminReferralsPage() {
                         onClick={() => openDetail(link)}
                       >
                         <td className="px-5 py-3.5">
-                          <span className="font-mono text-sm text-accent">{link.code}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-accent">{link.code}</span>
+                            <button
+                              onClick={e => { e.stopPropagation(); copyRefUrl(link.code); }}
+                              className="text-text-dim hover:text-accent transition-colors"
+                              title={`Copy full URL`}
+                            >
+                              {copiedCode === link.code
+                                ? <Check size={11} className="text-signal-green" />
+                                : <Copy size={11} />}
+                            </button>
+                          </div>
                         </td>
                         <td className="px-4 py-3.5">
                           <span className={`font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 border rounded-full ${TYPE_BADGE[link.type]}`}>

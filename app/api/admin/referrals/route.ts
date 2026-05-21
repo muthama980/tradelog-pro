@@ -50,6 +50,7 @@ export async function GET() {
 
   // Overview
   const allSubscribed   = referralList.filter(r => r.status === 'subscribed');
+  const allOnTrial      = referralList.filter(r => r.status === 'signed_up');
   const totalOwed       = allSubscribed.reduce((s, r) => s + Number(r.commission_amount || 0) - Number(r.commission_paid || 0), 0);
   const totalPaid       = payoutList.reduce((s, p) => s + Number(p.amount || 0), 0);
 
@@ -59,6 +60,7 @@ export async function GET() {
       partnerLinks:    linkList.filter(l => l.type === 'partner').length,
       userLinks:       linkList.filter(l => l.type === 'user').length,
       totalReferred:   referralList.length,
+      onTrial:         allOnTrial.length,
       totalSubscribed: allSubscribed.length,
       totalOwed:       Math.max(0, totalOwed),
       totalPaid,

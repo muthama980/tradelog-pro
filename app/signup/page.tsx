@@ -161,10 +161,10 @@ function SignupForm() {
 
     // Track referral signup
     if (refCode) {
-      fetch('/api/referrals/track', {
+      await fetch('/api/referrals/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: refCode }),
+        body: JSON.stringify({ code: refCode, referred_user_id: userId }),
       }).catch(() => {});
       localStorage.removeItem('tradelog_ref');
     }
@@ -179,6 +179,10 @@ function SignupForm() {
   }
 
   async function signupWithGoogle() {
+    // Persist ref code across OAuth redirect via cookie (localStorage is not available server-side)
+    if (refCode) {
+      document.cookie = `tradelog_ref=${encodeURIComponent(refCode)}; path=/; max-age=3600; SameSite=Lax`;
+    }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

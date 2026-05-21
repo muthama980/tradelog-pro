@@ -80,6 +80,12 @@ body {
 ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 217, 255, 0.3); }
 
+/* Sidebar nav — thinner, subtler scrollbar */
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: #27272A; border-radius: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
+
 /* ── Custom utility classes ─────────────────────────────────────── */
 
 /* Primary button — cyan bg, black text (same in both themes) */

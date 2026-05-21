@@ -62,7 +62,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
 
   const sidebarContent = (
     <aside className="w-60 h-full bg-bg-surface flex flex-col border-r border-border">
-      <div className="p-5 border-b border-border flex items-center justify-between">
+      <div className="p-5 border-b border-border flex items-center justify-between shrink-0">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-accent rounded-[3px] flex items-center justify-center">
             <span className="font-mono text-[9px] font-black text-bg tracking-[-0.05em]">TLP</span>
@@ -79,7 +79,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
         </button>
       </div>
 
-      <nav className="flex-1 px-3 py-5 space-y-0.5" data-tour="sidebar">
+      <nav className="flex-1 px-3 py-5 space-y-0.5 overflow-y-auto min-h-0 sidebar-nav" data-tour="sidebar">
         {NAV.map((item) => {
           const Icon   = item.icon;
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -102,7 +102,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
         })}
       </nav>
 
-      <div className="p-3 border-t border-border space-y-0.5">
+      <div className="p-3 border-t border-border space-y-0.5 shrink-0">
         {plan && (
           <div className="px-3 py-2 mb-1">
             <span className={`font-mono text-[10px] tracking-widest uppercase ${

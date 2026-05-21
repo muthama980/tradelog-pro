@@ -1,13 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { code, referred_user_id } = await req.json();
+  if (!code || !referred_user_id) {
+    return NextResponse.json({ error: 'Missing code or referred_user_id' }, { status: 400 });
+  }
 
-  const { code } = await req.json();
-  if (!code) return NextResponse.json({ error: 'Missing code' }, { status: 400 });
+  const supabase = createAdminClient();
 
   // Look up the referral link
   const { data: link } = await supabase
@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
   if (!link) return NextResponse.json({ error: 'Invalid or inactive code' }, { status: 404 });
 
   // Don't allow self-referral
-  if (link.user_id === user.id) return NextResponse.json({ ok: true, skipped: 'self-referral' });
+  if (link.user_id === referred_user_id) return NextResponse.json({ ok: true, skipped: 'self-referral' });
 
   // Check if this user was already referred
   const { data: existing } = await supabase
     .from('referrals')
     .select('id')
-    .eq('referred_id', user.id)
+    .eq('referred_id', referred_user_id)
     .single();
 
   if (existing) return NextResponse.json({ ok: true, skipped: 'already-referred' });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   await supabase.from('referrals').insert({
     referral_link_id: link.id,
     referrer_id:      link.user_id,
-    referred_id:      user.id,
+    referred_id:      referred_user_id,
     status:           'signed_up',
   });
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   await supabase
     .from('profiles')
     .update({ referred_by: code })
-    .eq('id', user.id);
+    .eq('id', referred_user_id);
 
   return NextResponse.json({ ok: true });
 }
