@@ -59,6 +59,17 @@ function SignupForm() {
   const plan = params.get('plan') || 'pro';
   const supabase = createClient();
 
+  // Referral tracking
+  const refFromUrl = params.get('ref') || '';
+  const [refCode] = useState<string>(() => {
+    if (typeof window === 'undefined') return refFromUrl;
+    if (refFromUrl) {
+      localStorage.setItem('tradelog_ref', refFromUrl);
+      return refFromUrl;
+    }
+    return localStorage.getItem('tradelog_ref') || '';
+  });
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -145,7 +156,18 @@ function SignupForm() {
       plan_intent: plan || 'pro',
       trial_ends_at: trialEndsAt,
       email_opt_in: emailOptIn,
+      ...(refCode ? { referred_by: refCode } : {}),
     }, { onConflict: 'id' });
+
+    // Track referral signup
+    if (refCode) {
+      fetch('/api/referrals/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: refCode }),
+      }).catch(() => {});
+      localStorage.removeItem('tradelog_ref');
+    }
 
     // fire-and-forget: welcome in-app notifications + welcome email
     fetch('/api/notifications/welcome', { method: 'POST' }).catch(() => {});

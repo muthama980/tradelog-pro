@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library, Shield } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library, Shield, Users, ChevronDown, ChevronRight, Bell, Link2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -18,6 +18,7 @@ const NAV = [
   { href: '/dashboard/connections', label: 'Connections',  icon: Plug,            tour: 'connections' },
   { href: '/dashboard/analytics',   label: 'Analytics',    icon: BarChart3,       tour: 'analytics' },
   { href: '/dashboard/coach',       label: 'AI Coach',     icon: Brain,           tour: 'coach' },
+  { href: '/dashboard/referrals',   label: 'Referrals',    icon: Users,           tour: 'referrals' },
 ];
 
 const PLAN_LABELS: Record<string, string> = {
@@ -35,18 +36,23 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
   const [plan, setPlan] = useState<string | null>(null);
   const [planIntent, setPlanIntent] = useState<string>('pro');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
-      supabase.from('profiles').select('plan, plan_intent, is_admin').eq('id', user.id).single().then(({ data, error }) => {
-        console.log('Profile data:', data, 'Error:', error);
+      supabase.from('profiles').select('plan, plan_intent, is_admin').eq('id', user.id).single().then(({ data }) => {
         if (data?.plan) setPlan(data.plan);
         if (data?.plan_intent) setPlanIntent(data.plan_intent);
         if (data?.is_admin) setIsAdmin(true);
       });
     });
   }, []);
+
+  // Auto-expand admin section when on an admin route
+  useEffect(() => {
+    if (pathname.startsWith('/dashboard/admin')) setAdminOpen(true);
+  }, [pathname]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -145,18 +151,48 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
           Report Issue
         </Link>
         {isAdmin && (
-          <Link
-            href="/dashboard/admin/notifications"
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-              pathname.startsWith('/dashboard/admin')
-                ? 'bg-accent/10 text-accent border-l-2 border-accent'
-                : 'text-text-muted hover:text-text hover:bg-bg-elevated'
-            }`}
-          >
-            <Shield size={15} strokeWidth={1.7} />
-            Admin
-          </Link>
+          <div>
+            <button
+              onClick={() => setAdminOpen(v => !v)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                pathname.startsWith('/dashboard/admin')
+                  ? 'bg-accent/10 text-accent border-l-2 border-accent'
+                  : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+              }`}
+            >
+              <Shield size={15} strokeWidth={1.7} />
+              <span className="flex-1 text-left">Admin</span>
+              {adminOpen
+                ? <ChevronDown size={13} strokeWidth={1.7} />
+                : <ChevronRight size={13} strokeWidth={1.7} />}
+            </button>
+            {(adminOpen || pathname.startsWith('/dashboard/admin')) && (
+              <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border/50 pl-3">
+                {[
+                  { href: '/dashboard/admin/notifications', label: 'Notifications', icon: Bell },
+                  { href: '/dashboard/admin/referrals',    label: 'Referrals',     icon: Link2 },
+                ].map(item => {
+                  const Icon   = item.icon;
+                  const active = pathname === item.href || pathname.startsWith(item.href + '/');
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
+                        active
+                          ? 'text-accent bg-accent/5'
+                          : 'text-text-muted hover:text-text hover:bg-bg-elevated'
+                      }`}
+                    >
+                      <Icon size={13} strokeWidth={1.7} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
         <button
           onClick={signOut}
