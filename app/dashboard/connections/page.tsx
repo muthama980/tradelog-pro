@@ -120,8 +120,6 @@ const MARKETS: {
     methods: [
       { kind: 'broker', name: 'MT4 / MT5 Broker', hint: 'Connect Exness, XM, Vantage, IC Markets & more' },
       { kind: 'csv', format: 'metatrader', name: 'MetaTrader 4/5 CSV', hint: 'Import MT4 or MT5 trade statements' },
-      { kind: 'coming-soon', name: 'OANDA API',        hint: 'Auto-sync coming soon' },
-      { kind: 'coming-soon', name: 'cTrader CSV',      hint: 'Import coming soon' },
       { kind: 'manual', name: 'Manual Entry',          hint: 'Log trades in your journal' },
     ],
   },
@@ -130,9 +128,6 @@ const MARKETS: {
     note: 'Stock brokers primarily support CSV import. Upload your trade history to get started.',
     methods: [
       { kind: 'broker', name: 'MT5 Broker', hint: 'Connect stocks/indices broker via MT5 account' },
-      { kind: 'coming-soon', name: 'Alpaca API',                hint: 'Auto-sync coming soon' },
-      { kind: 'coming-soon', name: 'Interactive Brokers CSV',   hint: 'Import coming soon' },
-      { kind: 'coming-soon', name: 'TradingView CSV',           hint: 'Import coming soon' },
       { kind: 'manual', name: 'Manual Entry',                   hint: 'Log trades in your journal' },
     ],
   },
@@ -141,7 +136,6 @@ const MARKETS: {
     methods: [
       { kind: 'broker', name: 'MT4 / MT5 Broker', hint: 'Connect futures broker via MT4/MT5 account' },
       { kind: 'csv', format: 'metatrader', name: 'MetaTrader CSV', hint: 'Import futures trade statements' },
-      { kind: 'coming-soon', name: 'NinjaTrader CSV', hint: 'Import coming soon' },
       { kind: 'manual', name: 'Manual Entry',         hint: 'Log trades in your journal' },
     ],
   },
@@ -439,9 +433,8 @@ export default function ConnectionsPage() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-text text-sm">{method.name}</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest"
-                style={{ background: 'rgba(0,217,255,0.1)', color: '#00D9FF' }}>
-                New
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest bg-bg-elevated text-text-dim border border-border">
+                Soon
               </span>
             </div>
             <div className="text-text-muted text-xs mt-0.5">{method.hint}</div>
