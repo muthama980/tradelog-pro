@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, X, Loader2, Pencil, ChevronDown, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, X, Loader2, Pencil, ChevronDown, Trash2, AlertTriangle, Camera } from 'lucide-react';
 import { computePnl } from '@/lib/utils';
+import { uploadTradeScreenshot } from '@/lib/uploadScreenshot';
+import ProfitCelebration from '@/components/dashboard/ProfitCelebration';
+import ImageLightbox from '@/components/dashboard/ImageLightbox';
 
 // ─── Broker list ─────────────────────────────────────────────────────────────
 const BROKERS = [
@@ -56,6 +59,8 @@ const BLANK_FORM = {
 
 export default function JournalPage() {
   const supabase = createClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [trades, setTrades]             = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
   const [showForm, setShowForm]         = useState(false);
@@ -74,6 +79,21 @@ export default function JournalPage() {
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting]   = useState(false);
 
+  // Screenshot state
+  const [screenshotFile, setScreenshotFile]             = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview]       = useState<string | null>(null);
+  const [screenshotError, setScreenshotError]           = useState<string | null>(null);
+  const [existingScreenshotUrl, setExistingScreenshotUrl] = useState<string | null>(null);
+  const [removeScreenshot, setRemoveScreenshot]         = useState(false);
+
+  // Celebration state
+  const [showCelebration, setShowCelebration]   = useState(false);
+  const [celebrationPnl, setCelebrationPnl]     = useState(0);
+  const [celebrationSymbol, setCelebrationSymbol] = useState('');
+
+  // Lightbox
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
   async function load() {
     setLoading(true);
     const { data } = await supabase.from('trades').select('*').order('opened_at', { ascending: false });
@@ -88,6 +108,14 @@ export default function JournalPage() {
     });
   }, []);
 
+  function resetScreenshotState() {
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    setScreenshotError(null);
+    setExistingScreenshotUrl(null);
+    setRemoveScreenshot(false);
+  }
+
   function openNew() {
     setEditingId(null);
     setForm({ ...BLANK_FORM, opened_at: new Date().toISOString().slice(0, 16) });
@@ -96,6 +124,7 @@ export default function JournalPage() {
     setShowCustomStrategy(false);
     setCustomBroker('');
     setShowCustomBroker(false);
+    resetScreenshotState();
     setShowForm(true);
   }
 
@@ -123,12 +152,19 @@ export default function JournalPage() {
       broker:           isPresetBroker ? (trade.broker || '') : (trade.broker ? '__other__' : ''),
     });
     setSelectedMistakes(Array.isArray(trade.mistakes) ? trade.mistakes : []);
+    // Screenshot
+    setExistingScreenshotUrl(trade.screenshot_url || null);
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    setScreenshotError(null);
+    setRemoveScreenshot(false);
     setShowForm(true);
   }
 
   function closeModal() {
     setShowForm(false);
     setEditingId(null);
+    resetScreenshotState();
   }
 
   function toggleMistake(m: string) {
@@ -158,6 +194,20 @@ export default function JournalPage() {
     load();
   }
 
+  function handleScreenshotSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+    if (file.size > 5 * 1024 * 1024) {
+      setScreenshotError('File too large. Max 5MB.');
+      return;
+    }
+    setScreenshotError(null);
+    setScreenshotFile(file);
+    setScreenshotPreview(URL.createObjectURL(file));
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -170,7 +220,18 @@ export default function JournalPage() {
     const strategy = form.strategy === '__custom__' ? (customStrategy.trim() || null) : (form.strategy || null);
     const broker   = form.broker   === '__other__'  ? (customBroker.trim()   || null) : (form.broker   || null);
 
-    const payload = {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setSubmitting(false); return; }
+
+    // Handle screenshot
+    let screenshotUrlToSave: string | null | undefined = undefined;
+    if (screenshotFile) {
+      screenshotUrlToSave = await uploadTradeScreenshot(user.id, screenshotFile);
+    } else if (removeScreenshot) {
+      screenshotUrlToSave = null;
+    }
+
+    const payload: any = {
       symbol:           form.symbol.toUpperCase(),
       market:           form.market,
       direction:        form.direction,
@@ -190,17 +251,27 @@ export default function JournalPage() {
       broker,
     };
 
+    if (screenshotUrlToSave !== undefined) {
+      payload.screenshot_url = screenshotUrlToSave;
+    }
+
     let error: any = null;
     if (editingId) {
       ({ error } = await supabase.from('trades').update(payload).eq('id', editingId));
     } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setSubmitting(false); return; }
       ({ error } = await supabase.from('trades').insert({ ...payload, user_id: user.id }));
     }
 
     setSubmitting(false);
     if (error) { alert(error.message); return; }
+
+    // Trigger celebration for new profitable trades
+    if (!editingId && pnl && pnl > 0) {
+      setCelebrationPnl(pnl);
+      setCelebrationSymbol(form.symbol.toUpperCase());
+      setShowCelebration(true);
+    }
+
     closeModal();
     load();
   }
@@ -213,6 +284,20 @@ export default function JournalPage() {
 
   return (
     <div className="p-8 md:p-10 max-w-7xl">
+      {/* Lightbox */}
+      {lightboxSrc && (
+        <ImageLightbox src={lightboxSrc} alt="Trade screenshot" onClose={() => setLightboxSrc(null)} />
+      )}
+
+      {/* Celebration */}
+      {showCelebration && (
+        <ProfitCelebration
+          pnl={celebrationPnl}
+          symbol={celebrationSymbol}
+          onClose={() => setShowCelebration(false)}
+        />
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div>
           <p className="mono-label mb-2">Journal</p>
@@ -462,6 +547,66 @@ export default function JournalPage() {
                   placeholder="Why did you take this trade? What was the setup?" />
               </Field>
 
+              {/* Screenshot */}
+              <Field label="Screenshot (optional)">
+                {/* Show existing screenshot when editing */}
+                {existingScreenshotUrl && !removeScreenshot && !screenshotFile ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={existingScreenshotUrl}
+                      alt="Existing screenshot"
+                      className="max-h-[200px] rounded-lg object-cover border border-border cursor-pointer hover:border-accent/50 transition-colors"
+                      onClick={() => setLightboxSrc(existingScreenshotUrl)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setRemoveScreenshot(true); setExistingScreenshotUrl(null); }}
+                      className="absolute top-1.5 right-1.5 bg-bg-elevated border border-border rounded-full p-0.5 text-text-muted hover:text-signal-red transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : screenshotPreview ? (
+                  /* Show new file preview */
+                  <div className="relative inline-block">
+                    <img
+                      src={screenshotPreview}
+                      alt="Screenshot preview"
+                      className="max-h-[200px] rounded-lg object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setScreenshotFile(null); setScreenshotPreview(null); }}
+                      className="absolute top-1.5 right-1.5 bg-bg-elevated border border-border rounded-full p-0.5 text-text-muted hover:text-signal-red transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  /* Upload zone */
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-accent/50 transition-colors flex flex-col items-center gap-2"
+                    >
+                      <Camera size={20} className="text-text-muted" />
+                      <span className="text-text-muted text-sm">Add screenshot (optional)</span>
+                    </button>
+                    {screenshotError && (
+                      <p className="text-signal-red text-xs mt-1.5">{screenshotError}</p>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp"
+                  className="hidden"
+                  onChange={handleScreenshotSelect}
+                />
+              </Field>
+
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeModal} className="btn-secondary flex-1 justify-center">Cancel</button>
                 <button type="submit" disabled={submitting} className="btn-primary flex-1 justify-center">
@@ -578,6 +723,17 @@ export default function JournalPage() {
                             {t.mistakes.length > 2 && (
                               <span className="font-mono text-xs text-text-muted">+{t.mistakes.length - 2}</span>
                             )}
+                          </div>
+                        )}
+                        {/* Screenshot thumbnail */}
+                        {t.screenshot_url && (
+                          <div className="mt-1.5">
+                            <img
+                              src={t.screenshot_url}
+                              alt="Screenshot"
+                              className="w-10 h-10 rounded object-cover border border-border cursor-pointer hover:border-accent/50 transition-colors"
+                              onClick={() => setLightboxSrc(t.screenshot_url)}
+                            />
                           </div>
                         )}
                       </td>

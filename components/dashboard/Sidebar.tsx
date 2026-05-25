@@ -172,6 +172,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
                 {[
                   { href: '/dashboard/admin/notifications', label: 'Notifications', icon: Bell },
                   { href: '/dashboard/admin/referrals',    label: 'Referrals',     icon: Link2 },
+                  { href: '/dashboard/admin/trades',       label: 'Trades',        icon: BarChart3 },
                 ].map(item => {
                   const Icon   = item.icon;
                   const active = pathname === item.href || pathname.startsWith(item.href + '/');
