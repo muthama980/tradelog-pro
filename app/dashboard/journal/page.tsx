@@ -87,9 +87,17 @@ export default function JournalPage() {
   const [removeScreenshot, setRemoveScreenshot]         = useState(false);
 
   // Celebration state
-  const [showCelebration, setShowCelebration]   = useState(false);
-  const [celebrationPnl, setCelebrationPnl]     = useState(0);
-  const [celebrationSymbol, setCelebrationSymbol] = useState('');
+  const [celebrationData, setCelebrationData] = useState<{
+    pnl: number;
+    symbol: string;
+    direction: string;
+    entryPrice: number;
+    exitPrice: number;
+    strategy?: string;
+    emotion?: string;
+    session?: string;
+  } | null>(null);
+  const showCelebration = celebrationData !== null;
 
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -266,10 +274,17 @@ export default function JournalPage() {
     if (error) { alert(error.message); return; }
 
     // Trigger celebration for new profitable trades
-    if (!editingId && pnl && pnl > 0) {
-      setCelebrationPnl(pnl);
-      setCelebrationSymbol(form.symbol.toUpperCase());
-      setShowCelebration(true);
+    if (!editingId && pnl && pnl > 0 && exit) {
+      setCelebrationData({
+        pnl,
+        symbol:     form.symbol.toUpperCase(),
+        direction:  form.direction.charAt(0).toUpperCase() + form.direction.slice(1),
+        entryPrice: entry,
+        exitPrice:  exit,
+        strategy:   strategy ?? undefined,
+        emotion:    form.emotion || undefined,
+        session:    (SESSION_MARKETS.includes(form.market) && form.trading_session) ? form.trading_session : undefined,
+      });
     }
 
     closeModal();
@@ -290,11 +305,17 @@ export default function JournalPage() {
       )}
 
       {/* Celebration */}
-      {showCelebration && (
+      {showCelebration && celebrationData && (
         <ProfitCelebration
-          pnl={celebrationPnl}
-          symbol={celebrationSymbol}
-          onClose={() => setShowCelebration(false)}
+          pnl={celebrationData.pnl}
+          symbol={celebrationData.symbol}
+          direction={celebrationData.direction}
+          entryPrice={celebrationData.entryPrice}
+          exitPrice={celebrationData.exitPrice}
+          strategy={celebrationData.strategy}
+          emotion={celebrationData.emotion}
+          session={celebrationData.session}
+          onClose={() => setCelebrationData(null)}
         />
       )}
 
