@@ -64,9 +64,10 @@ export default function AdminAffiliatesPage() {
   const [actioning,  setActioning]  = useState<string | null>(null);
 
   // Approval modal
-  const [approvalModal, setApprovalModal] = useState<{ id: string; name: string; email: string } | null>(null);
-  const [refCode,       setRefCode]       = useState('');
-  const [creatingRef,   setCreatingRef]   = useState(false);
+  const [approvalModal,    setApprovalModal]    = useState<{ id: string; name: string; email: string } | null>(null);
+  const [refCode,          setRefCode]          = useState('');
+  const [commissionRate,   setCommissionRate]   = useState(36);
+  const [creatingRef,      setCreatingRef]      = useState(false);
 
   // Notes auto-save debounce
   const notesTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -142,7 +143,14 @@ export default function AdminAffiliatesPage() {
 
   // ── Actions ──────────────────────────────────────────────────
 
-  async function updateStatus(id: string, status: 'approved' | 'rejected') {
+  function openApprovalModal(app: Application) {
+    const firstName = app.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    setRefCode(firstName);
+    setCommissionRate(36);
+    setApprovalModal({ id: app.id, name: app.name, email: app.email });
+  }
+
+  async function updateStatus(id: string, status: 'rejected') {
     setActioning(id);
     const res = await fetch('/api/admin/affiliates', {
       method: 'PATCH',
@@ -151,40 +159,45 @@ export default function AdminAffiliatesPage() {
     });
     setActioning(null);
     if (!res.ok) { showToast('Failed to update status', true); return; }
-
-    if (status === 'approved') {
-      const app = apps.find(a => a.id === id);
-      if (app) {
-        const firstName = app.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-        setRefCode(firstName);
-        setApprovalModal({ id, name: app.name, email: app.email });
-      }
-    } else {
-      showToast('Application rejected.');
-    }
+    showToast('Application rejected.');
     load();
   }
 
   async function createReferralLink() {
     if (!approvalModal) return;
     setCreatingRef(true);
-    const res = await fetch('/api/admin/referrals', {
+    const cleanCode = refCode.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+    // Create the referral link (look up user by email to assign correct user_id)
+    const linkRes = await fetch('/api/admin/referrals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         label: approvalModal.name,
-        code: refCode.toLowerCase().replace(/[^a-z0-9-]/g, ''),
-        commission_rate: 36,
+        code: cleanCode,
+        commission_rate: commissionRate,
+        email: approvalModal.email,
       }),
     });
-    setCreatingRef(false);
-    if (!res.ok) {
-      const d = await res.json();
+
+    if (!linkRes.ok) {
+      const d = await linkRes.json();
+      setCreatingRef(false);
       showToast(d.error || 'Failed to create referral link', true);
       return;
     }
+
+    // Approve the application and send email with referral link
+    await fetch('/api/admin/affiliates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: approvalModal.id, status: 'approved', referral_code: cleanCode }),
+    });
+
+    setCreatingRef(false);
     setApprovalModal(null);
-    showToast(`Approved! Referral link "${refCode}" created.`);
+    showToast(`Approved! Referral link "${cleanCode}" created. Approval email sent.`);
+    load();
   }
 
   // ── Render ───────────────────────────────────────────────────
@@ -232,28 +245,51 @@ export default function AdminAffiliatesPage() {
               <div className="w-9 h-9 rounded-full bg-signal-green/10 border border-signal-green/30 flex items-center justify-center">
                 <Check size={16} className="text-signal-green" />
               </div>
-              <h3 className="font-bold text-lg text-text">Application Approved</h3>
+              <h3 className="font-bold text-lg text-text">Create Partner Referral Link</h3>
             </div>
             <p className="text-text-muted text-sm mb-5">
-              Create a partner referral link for <strong className="text-text">{approvalModal.name}</strong>? You can do this later from the Referrals page.
+              Set up a referral link for <strong className="text-text">{approvalModal.name}</strong>. They'll receive an approval email with their link included.
             </p>
-            <div className="mb-6">
-              <label className="text-sm font-medium text-text-muted mb-1.5 block">Referral code</label>
-              <input
-                value={refCode}
-                onChange={e => setRefCode(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                className="form-input font-mono"
-                placeholder="e.g. john"
-              />
-              {refCode && (
-                <p className="font-mono text-xs text-accent mt-2">
-                  tradelogpro.xyz/signup?ref={refCode}
-                </p>
-              )}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="text-sm font-medium text-text-muted mb-1.5 block">Referral code</label>
+                <input
+                  value={refCode}
+                  onChange={e => setRefCode(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  className="form-input font-mono"
+                  placeholder="e.g. john"
+                />
+                {refCode && (
+                  <p className="font-mono text-xs text-accent mt-2">
+                    tradelogpro.xyz/signup?ref={refCode}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-text-muted mb-1.5 block">Commission rate (%)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={commissionRate}
+                  onChange={e => setCommissionRate(Number(e.target.value))}
+                  className="form-input font-mono"
+                />
+              </div>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => { setApprovalModal(null); showToast('Approved! Create the referral link manually from Referrals.'); }}
+                onClick={async () => {
+                  const modalId = approvalModal.id;
+                  setApprovalModal(null);
+                  await fetch('/api/admin/affiliates', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: modalId, status: 'approved' }),
+                  });
+                  showToast('Approved! Create the referral link manually from Referrals.');
+                  load();
+                }}
                 className="btn-secondary flex-1 justify-center text-sm"
               >
                 Skip for now
@@ -264,7 +300,7 @@ export default function AdminAffiliatesPage() {
                 className="btn-primary flex-1 justify-center gap-2 text-sm"
               >
                 {creatingRef ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={13} />}
-                {creatingRef ? 'Creating…' : 'Create link'}
+                {creatingRef ? 'Creating…' : 'Create & approve'}
               </button>
             </div>
           </div>
@@ -423,11 +459,10 @@ export default function AdminAffiliatesPage() {
                               <div className="flex flex-wrap items-center gap-2">
                                 {app.status !== 'approved' && (
                                   <button
-                                    onClick={() => updateStatus(app.id, 'approved')}
-                                    disabled={actioning === app.id}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-signal-green/10 border border-signal-green/30 text-signal-green text-sm font-medium hover:bg-signal-green/20 transition disabled:opacity-50"
+                                    onClick={() => openApprovalModal(app)}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-signal-green/10 border border-signal-green/30 text-signal-green text-sm font-medium hover:bg-signal-green/20 transition"
                                   >
-                                    {actioning === app.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                                    <Check size={13} />
                                     Approve
                                   </button>
                                 )}

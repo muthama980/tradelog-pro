@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest) {
 
   const admin = createAdminClient();
   const body = await req.json();
-  const { id, status, admin_notes } = body;
+  const { id, status, admin_notes, referral_code } = body;
 
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
@@ -66,7 +66,7 @@ export async function PATCH(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (status === 'approved' && application) {
-    await sendAffiliateApproval(application.email, application.name);
+    await sendAffiliateApproval(application.email, application.name, referral_code || '');
   }
 
   return NextResponse.json({ ok: true });

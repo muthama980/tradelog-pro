@@ -42,10 +42,12 @@ export async function POST(req: NextRequest) {
     status:           'signed_up',
   });
 
-  // Update profile with referral code
+  // Extend trial to 8 days and update referral code on profile
+  const extendedTrial = new Date();
+  extendedTrial.setDate(extendedTrial.getDate() + 8);
   await supabase
     .from('profiles')
-    .update({ referred_by: code })
+    .update({ referred_by: code, trial_ends_at: extendedTrial.toISOString() })
     .eq('id', referred_user_id);
 
   return NextResponse.json({ ok: true });

@@ -129,7 +129,7 @@ export default function ReferralsPage() {
         <p className="mono-label mb-2">Referrals</p>
         <h1 className="text-3xl font-bold text-text tracking-tight">Earn by sharing.</h1>
         <p className="text-text-muted text-sm mt-1">
-          Share your link. Earn {data?.link ? `${Math.round((data.link.commission_rate) * 100)}%` : '10%'} of every subscription your referrals convert to.
+          Share your link. Earn {data?.link ? `${Math.round((data.link.commission_rate) * 100)}%` : '10%'} of every subscription for 12 months per referral.
         </p>
       </div>
 
@@ -140,7 +140,7 @@ export default function ReferralsPage() {
             <Share2 size={36} className="text-text-muted mx-auto mb-4" strokeWidth={1.2} />
             <h3 className="font-bold text-lg text-text mb-2">Generate your referral link</h3>
             <p className="text-text-muted text-sm mb-6 max-w-sm mx-auto">
-              Get a unique link to share with other traders. You'll earn 10% commission on every subscription.
+              Get a unique link to share with other traders. You'll earn 10% commission for 12 months per referral.
             </p>
             <button onClick={generateLink} disabled={generating} className="btn-primary gap-2">
               {generating ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
@@ -153,7 +153,7 @@ export default function ReferralsPage() {
               <div>
                 <h3 className="font-bold text-base text-text">Your Referral Link</h3>
                 <p className="text-text-muted text-sm mt-0.5">
-                  You earn <span className="text-accent font-semibold">{Math.round(data.link.commission_rate * 100)}%</span> of every subscription
+                  You earn <span className="text-accent font-semibold">{Math.round(data.link.commission_rate * 100)}%</span> of every subscription for 12 months
                 </p>
               </div>
               <span className={`font-mono text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-full border ${

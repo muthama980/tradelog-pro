@@ -22,7 +22,7 @@ const STEPS = [
   {
     n: '3',
     title: 'Earn',
-    desc: 'Share your link. Earn up to 36% recurring commission on every subscription. Paid monthly.',
+    desc: 'Share your link. Earn 36% recurring commission per referral for 12 months. Paid monthly.',
   },
 ];
 
@@ -40,7 +40,7 @@ const WHAT_YOU_GET = [
   {
     icon: Clock,
     title: 'Extended Trials',
-    desc: 'Offer your audience exclusive 7-day or 14-day free trials instead of the standard 4 days.',
+    desc: 'Offer your audience an exclusive 8-day free trial instead of the standard 4 days.',
   },
   {
     icon: Headphones,
@@ -55,7 +55,7 @@ const NICHES = [
   'Prop firm challenges and reviews',
   'Trading psychology and mindset',
   'Day trading and swing trading',
-  'Financial literacy in Africa and emerging markets',
+  'Financial education and literacy',
 ];
 
 const EMPTY_FORM = {
@@ -177,28 +177,30 @@ export default function AffiliatesPage() {
         <section className="max-w-5xl mx-auto px-6 lg:px-10 pb-20">
           <div className="bg-bg-surface border border-border rounded-xl p-8">
             <p className="mono-label mb-3">Commission structure</p>
-            <h2 className="text-2xl font-bold text-text mb-6">How much will you earn?</h2>
+            <h2 className="text-2xl font-bold text-text mb-2">How much will you earn?</h2>
+            <p className="text-text-muted text-sm mb-6">Earn 36% of every subscription for 12 months — recurring monthly income for a full year per referral.</p>
 
             <div className="grid sm:grid-cols-3 gap-4 mb-8">
               {[
-                { plan: 'Core plan', price: '$19/mo', earn: '$6.84/mo', color: 'text-text' },
-                { plan: 'Pro plan', price: '$25/mo', earn: '$9.00/mo', color: 'text-accent' },
-                { plan: 'Elite plan', price: '$40/mo', earn: '$14.40/mo', color: 'text-text' },
-              ].map(({ plan, price, earn, color }) => (
+                { plan: 'Core plan', price: '$19/mo', earn: '$6.84/mo', total: '$82.08', color: 'text-text' },
+                { plan: 'Pro plan', price: '$25/mo', earn: '$9.00/mo', total: '$108.00', color: 'text-accent' },
+                { plan: 'Elite plan', price: '$40/mo', earn: '$14.40/mo', total: '$172.80', color: 'text-text' },
+              ].map(({ plan, price, earn, total, color }) => (
                 <div key={plan} className="bg-bg border border-border rounded-lg p-4">
                   <p className="font-mono text-xs text-text-dim uppercase tracking-widest mb-1">{plan}</p>
                   <p className="text-text-muted text-sm mb-2">{price}</p>
                   <p className={`font-mono font-bold text-lg ${color}`}>{earn}</p>
-                  <p className="text-text-dim text-xs">per referral / month</p>
+                  <p className="text-text-dim text-xs mb-1">per referral / month</p>
+                  <p className="font-mono text-xs text-accent">= {total} per referral (12 mo)</p>
                 </div>
               ))}
             </div>
 
             <div className="space-y-2 mb-6 border-t border-border pt-6">
               {[
-                '10 referrals on Pro = $90/mo passive income',
-                '50 referrals on Pro = $450/mo passive income',
-                '100 referrals on Pro = $900/mo passive income',
+                '10 referrals on Pro = $90/mo for 12 months',
+                '50 referrals on Pro = $450/mo for 12 months',
+                '100 referrals on Pro = $900/mo for 12 months',
               ].map(line => (
                 <div key={line} className="flex items-center gap-2 text-sm text-text-muted">
                   <ChevronRight size={13} className="text-accent shrink-0" />
@@ -208,7 +210,7 @@ export default function AffiliatesPage() {
             </div>
 
             <p className="text-accent font-medium text-sm">
-              Commissions are recurring — you earn every month, not just once.
+              36% recurring for 12 months per referral — not a one-time payment.
             </p>
           </div>
         </section>

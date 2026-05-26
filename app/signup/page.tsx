@@ -146,7 +146,8 @@ function SignupForm() {
     }
 
     const userId = signInData.user.id;
-    const trialEndsAt = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString();
+    const trialDays = refCode ? 8 : 4;
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
     await supabase.from('profiles').upsert({
       id: userId,
@@ -198,7 +199,7 @@ function SignupForm() {
   return (
     <>
       <h2 className="font-bold text-2xl text-text mb-1">Begin your trial</h2>
-      <p className="text-text-muted text-sm mb-2">Four days free · No credit card required</p>
+      <p className="text-text-muted text-sm mb-2">{refCode ? 'Eight days free' : 'Four days free'} · No credit card required</p>
       {plan && (
         <div className="inline-block font-mono text-[10px] tracking-widest text-accent uppercase border border-accent/30 px-2.5 py-1 rounded-full mb-6">
           Plan: {plan}
@@ -392,7 +393,7 @@ function SignupForm() {
         <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
           {loading
             ? loadingStep
-            : <><span>Begin 4-day trial</span><ArrowRight size={15} className="ml-2" /></>}
+            : <><span>Begin {refCode ? '8' : '4'}-day trial</span><ArrowRight size={15} className="ml-2" /></>}
         </button>
       </form>
 

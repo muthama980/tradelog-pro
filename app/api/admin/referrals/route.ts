@@ -73,11 +73,15 @@ export async function POST(req: NextRequest) {
   const admin = await assertAdmin(supabase);
   if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { label, code, commission_rate, user_id } = await req.json();
+  const { label, code, commission_rate, user_id, email } = await req.json();
   if (!code || !label) return NextResponse.json({ error: 'Missing code or label' }, { status: 400 });
 
-  // Resolve user_id: if not provided, use admin's own id as placeholder
-  const ownerId = user_id || admin.id;
+  // Resolve user_id: look up by email if not provided, fall back to admin id
+  let ownerId = user_id || admin.id;
+  if (!user_id && email) {
+    const { data: profile } = await supabase.from('profiles').select('id').eq('email', email).single();
+    if (profile) ownerId = profile.id;
+  }
   const rate    = typeof commission_rate === 'number' ? commission_rate / 100 : 0.36;
 
   const { data: link, error } = await supabase

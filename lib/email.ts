@@ -96,35 +96,60 @@ export async function sendAffiliateConfirmation(applicantEmail: string, applican
   }
 }
 
-export async function sendAffiliateApproval(applicantEmail: string, applicantName: string) {
+export async function sendAffiliateApproval(applicantEmail: string, applicantName: string, referralCode = '') {
   if (!process.env.RESEND_API_KEY) return { success: false };
+  const fullLink = referralCode ? `https://tradelogpro.xyz/signup?ref=${referralCode}` : '';
   try {
     await resend.emails.send({
       from: 'TradeLog Pro <hello@tradelogpro.xyz>',
       to: applicantEmail,
-      subject: "You're approved! Welcome to the TradeLog Pro Affiliate Program",
-      html: EMAIL_WRAP(`
-        <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;">You're approved! 🎉</h2>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">Hi ${applicantName},</p>
-        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">
-          Great news — your affiliate application has been approved! Welcome to the TradeLog Pro partner program.
-        </p>
-        <div style="background-color:#111113;border:1px solid #1F1F23;border-radius:12px;padding:20px;margin:24px 0;">
-          <p style="margin:0 0 10px 0;font-size:14px;color:#FAFAFA;font-weight:600;">Here's what happens next:</p>
-          <p style="margin:0 0 8px 0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">1.</strong> We're setting up your custom referral link</p>
-          <p style="margin:0 0 8px 0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">2.</strong> You'll receive it within 24 hours along with your marketing kit</p>
-          <p style="margin:0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">3.</strong> You'll earn <strong style="color:#22C55E;">36% recurring commission</strong> on every active subscription</p>
+      subject: `You're approved! Welcome to the TradeLog Pro Affiliate Program`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0A0A0B; color: #FAFAFA; padding: 40px 24px;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="font-size: 24px; font-weight: 700; margin: 0;">Trade<span style="color: #22C55E;">Log</span> Pro</h1>
+            <p style="color: #A1A1AA; font-size: 14px; margin-top: 4px;">Affiliate Program</p>
+          </div>
+
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">Welcome aboard, ${applicantName}! 🎉</h2>
+
+          <p style="color: #A1A1AA; font-size: 15px; line-height: 1.6;">Your affiliate application has been approved. Here's everything you need to start earning.</p>
+
+          ${fullLink ? `
+          <div style="background-color: #111113; border: 1px solid #1F1F23; border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <p style="color: #A1A1AA; font-size: 13px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Your Referral Link</p>
+            <p style="font-size: 16px; font-weight: 600; margin: 0; word-break: break-all;">
+              <a href="${fullLink}" style="color: #00D9FF; text-decoration: none;">${fullLink}</a>
+            </p>
+          </div>
+          ` : ''}
+
+          <div style="background-color: #111113; border: 1px solid #1F1F23; border-radius: 12px; padding: 20px; margin: 24px 0;">
+            <p style="font-size: 14px; margin: 0 0 12px 0;"><strong style="color: #00D9FF;">Commission:</strong> 36% recurring for 12 months per referral</p>
+            <p style="font-size: 14px; margin: 0 0 12px 0;"><strong style="color: #00D9FF;">How it works:</strong> Share your link → they sign up → they subscribe → you earn 36% every month for 12 months</p>
+            <p style="font-size: 14px; margin: 0;"><strong style="color: #00D9FF;">Trial:</strong> Your referrals get an 8-day free trial (extended from the standard 4 days)</p>
+          </div>
+
+          <h3 style="font-size: 16px; font-weight: 600; margin: 24px 0 12px;">Quick Start:</h3>
+          <div style="background-color: #111113; border: 1px solid #1F1F23; border-radius: 12px; padding: 20px; margin: 0 0 24px 0;">
+            <p style="font-size: 14px; margin: 0 0 12px 0;"><strong>1.</strong> Share your link with your audience</p>
+            <p style="font-size: 14px; margin: 0 0 12px 0;"><strong>2.</strong> They get 8 days free to try TradeLog Pro</p>
+            <p style="font-size: 14px; margin: 0 0 12px 0;"><strong>3.</strong> When they subscribe, you earn 36% monthly for 12 months</p>
+            <p style="font-size: 14px; margin: 0;"><strong>4.</strong> Track your earnings in real-time at tradelogpro.xyz/dashboard/referrals</p>
+          </div>
+
+          ${fullLink ? `
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${fullLink}" style="display: inline-block; background-color: #00D9FF; color: #000000; font-weight: 600; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-size: 15px;">Start Sharing Your Link</a>
+          </div>
+          ` : `<p style="color: #A1A1AA; font-size: 14px; line-height: 1.6;">You'll receive your custom referral link shortly.</p>`}
+
+          <p style="color: #A1A1AA; font-size: 14px;">Need marketing assets or have questions? Reply to this email — we're here to help you succeed.</p>
+
+          <hr style="border: none; border-top: 1px solid #1F1F23; margin: 32px 0;">
+          <p style="color: #71717A; font-size: 12px; text-align: center;">TradeLog Pro Affiliate Program · tradelogpro.xyz</p>
         </div>
-        <p style="color:#A1A1AA;font-size:14px;line-height:1.6;">
-          Questions? Reply to this email — we're here to help you succeed.
-        </p>
-        <div style="text-align:center;margin:28px 0;">
-          <a href="https://tradelogpro.xyz/affiliates"
-             style="display:inline-block;background-color:#00D9FF;color:#000000;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">
-            View Affiliate Program
-          </a>
-        </div>
-      `),
+      `,
     });
     return { success: true };
   } catch (error) {
