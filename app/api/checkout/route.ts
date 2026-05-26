@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
           attributes: {
             checkout_data: {
               email: user.email,
-              custom: { user_id: user.id, plan },
+              custom: { user_id: user.id, plan, email: user.email },
             },
             product_options: {
               redirect_url: `${siteUrl}/dashboard?checkout=success`,

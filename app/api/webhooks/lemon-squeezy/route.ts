@@ -44,8 +44,79 @@ export async function POST(req: NextRequest) {
       ls_subscription_id: String(event?.data?.id || ''),
       trial_ends_at: null,
     }).eq('id', userId);
+
+    // Referral commission tracking
+    try {
+      const userEmail = subscription?.user_email;
+      if (userEmail) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, referred_by')
+          .eq('email', userEmail)
+          .single();
+
+        if (profile?.referred_by) {
+          const { data: link } = await supabase
+            .from('referral_links')
+            .select('id, user_id, commission_rate')
+            .eq('code', profile.referred_by)
+            .single();
+
+          if (link) {
+            const PLAN_PRICES: Record<string, number> = { core: 19, pro: 25, prop: 40 };
+            const planName = (plan || 'pro').toLowerCase();
+            const basePrice = PLAN_PRICES[planName] ?? 19;
+            const commissionAmount = basePrice * link.commission_rate;
+
+            await supabase
+              .from('referrals')
+              .update({
+                status: 'subscribed',
+                plan: planName,
+                subscription_amount: basePrice,
+                commission_amount: commissionAmount,
+                subscribed_at: new Date().toISOString(),
+              })
+              .eq('referred_id', profile.id)
+              .eq('referral_link_id', link.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[webhook] referral commission tracking error:', err);
+    }
   } else if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
     await supabase.from('profiles').update({ plan: 'cancelled' }).eq('id', userId);
+
+    // Referral churn tracking
+    try {
+      const userEmail = subscription?.user_email;
+      if (userEmail) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, referred_by')
+          .eq('email', userEmail)
+          .single();
+
+        if (profile?.referred_by) {
+          const { data: link } = await supabase
+            .from('referral_links')
+            .select('id')
+            .eq('code', profile.referred_by)
+            .single();
+
+          if (link) {
+            await supabase
+              .from('referrals')
+              .update({ status: 'churned' })
+              .eq('referred_id', profile.id)
+              .eq('referral_link_id', link.id);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[webhook] referral churn tracking error:', err);
+    }
   }
 
   return NextResponse.json({ ok: true });
