@@ -19,7 +19,10 @@
       "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\('Sparkles:', !!l.Sparkles, 'BellOff:', !!l.BellOff, 'CheckCircle:', !!l.CheckCircle\\)\")",
       "Bash(vercel *)",
       "Bash(git -C /home/johnm/tradelog-pro status --porcelain)",
-      "Bash(git -C /home/johnm/tradelog-pro rev-parse --short HEAD)"
+      "Bash(git -C /home/johnm/tradelog-pro rev-parse --short HEAD)",
+      "Bash(git -C /home/johnm/tradelog-pro status)",
+      "Bash(git -C /home/johnm/tradelog-pro diff)",
+      "Bash(git *)"
     ]
   }
 }
