@@ -2,6 +2,137 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+interface AffiliateApplicationData {
+  name: string;
+  email: string;
+  platform: string;
+  channel_url: string;
+  audience_size: string | null;
+  niche: string | null;
+  country: string | null;
+  message: string | null;
+}
+
+const EMAIL_HEADER = `
+  <div style="text-align:center;margin-bottom:32px;">
+    <h1 style="font-size:24px;font-weight:700;margin:0;">Trade<span style="color:#22C55E;">Log</span> Pro</h1>
+    <p style="color:#A1A1AA;font-size:14px;margin-top:4px;">Journal smarter. Trade better.</p>
+  </div>`;
+
+const EMAIL_FOOTER = `
+  <hr style="border:none;border-top:1px solid #1F1F23;margin:32px 0;">
+  <p style="color:#71717A;font-size:12px;text-align:center;">TradeLog Pro · tradelogpro.xyz<br>Journal smarter. Trade better.</p>`;
+
+const EMAIL_WRAP = (inner: string) =>
+  `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background-color:#0A0A0B;color:#FAFAFA;padding:40px 24px;">
+    ${EMAIL_HEADER}${inner}${EMAIL_FOOTER}
+  </div>`;
+
+export async function sendAffiliateApplicationNotification(
+  adminEmail: string,
+  data: AffiliateApplicationData,
+) {
+  if (!process.env.RESEND_API_KEY) return { success: false };
+  try {
+    await resend.emails.send({
+      from: 'TradeLog Pro <hello@tradelogpro.xyz>',
+      to: adminEmail,
+      subject: `New Affiliate Application — ${data.name} (${data.platform})`,
+      html: EMAIL_WRAP(`
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:16px;">New Affiliate Application</h2>
+        <div style="background-color:#111113;border:1px solid #1F1F23;border-radius:12px;padding:20px;margin:24px 0;">
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Name:</strong> <span style="color:#FAFAFA;">${data.name}</span></p>
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Email:</strong> <span style="color:#FAFAFA;">${data.email}</span></p>
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Platform:</strong> <span style="color:#FAFAFA;">${data.platform}</span></p>
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Channel:</strong> <a href="${data.channel_url}" style="color:#00D9FF;">${data.channel_url}</a></p>
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Audience:</strong> <span style="color:#FAFAFA;">${data.audience_size ?? '—'}</span></p>
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Niche:</strong> <span style="color:#FAFAFA;">${data.niche ?? '—'}</span></p>
+          <p style="margin:0 0 10px 0;font-size:14px;"><strong style="color:#A1A1AA;">Country:</strong> <span style="color:#FAFAFA;">${data.country ?? '—'}</span></p>
+          ${data.message ? `<p style="margin:0;font-size:14px;"><strong style="color:#A1A1AA;">Message:</strong> <span style="color:#A1A1AA;">${data.message}</span></p>` : ''}
+        </div>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="https://tradelogpro.xyz/dashboard/admin/affiliates"
+             style="display:inline-block;background-color:#00D9FF;color:#000000;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">
+            Review Application
+          </a>
+        </div>
+      `),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send affiliate notification email:', error);
+    return { success: false, error };
+  }
+}
+
+export async function sendAffiliateConfirmation(applicantEmail: string, applicantName: string) {
+  if (!process.env.RESEND_API_KEY) return { success: false };
+  try {
+    await resend.emails.send({
+      from: 'TradeLog Pro <hello@tradelogpro.xyz>',
+      to: applicantEmail,
+      subject: 'We received your affiliate application!',
+      html: EMAIL_WRAP(`
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;">Application received! 🎉</h2>
+        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">Hi ${applicantName},</p>
+        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">
+          Thanks for applying to the TradeLog Pro affiliate program. We're excited to hear about your audience!
+        </p>
+        <div style="background-color:#111113;border:1px solid #1F1F23;border-radius:12px;padding:20px;margin:24px 0;">
+          <p style="margin:0 0 10px 0;font-size:14px;color:#FAFAFA;font-weight:600;">What happens next:</p>
+          <p style="margin:0 0 8px 0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">1.</strong> We'll review your application within 48 hours</p>
+          <p style="margin:0 0 8px 0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">2.</strong> You'll receive an email with our decision</p>
+          <p style="margin:0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">3.</strong> If approved, you'll get your custom referral link and marketing kit</p>
+        </div>
+        <p style="color:#A1A1AA;font-size:14px;line-height:1.6;">
+          Questions? Reply to this email or visit <a href="https://tradelogpro.xyz/contact" style="color:#00D9FF;text-decoration:none;">tradelogpro.xyz/contact</a>.
+        </p>
+      `),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send affiliate confirmation email:', error);
+    return { success: false, error };
+  }
+}
+
+export async function sendAffiliateApproval(applicantEmail: string, applicantName: string) {
+  if (!process.env.RESEND_API_KEY) return { success: false };
+  try {
+    await resend.emails.send({
+      from: 'TradeLog Pro <hello@tradelogpro.xyz>',
+      to: applicantEmail,
+      subject: "You're approved! Welcome to the TradeLog Pro Affiliate Program",
+      html: EMAIL_WRAP(`
+        <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;">You're approved! 🎉</h2>
+        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">Hi ${applicantName},</p>
+        <p style="color:#A1A1AA;font-size:15px;line-height:1.6;">
+          Great news — your affiliate application has been approved! Welcome to the TradeLog Pro partner program.
+        </p>
+        <div style="background-color:#111113;border:1px solid #1F1F23;border-radius:12px;padding:20px;margin:24px 0;">
+          <p style="margin:0 0 10px 0;font-size:14px;color:#FAFAFA;font-weight:600;">Here's what happens next:</p>
+          <p style="margin:0 0 8px 0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">1.</strong> We're setting up your custom referral link</p>
+          <p style="margin:0 0 8px 0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">2.</strong> You'll receive it within 24 hours along with your marketing kit</p>
+          <p style="margin:0;font-size:14px;color:#A1A1AA;"><strong style="color:#00D9FF;">3.</strong> You'll earn <strong style="color:#22C55E;">36% recurring commission</strong> on every active subscription</p>
+        </div>
+        <p style="color:#A1A1AA;font-size:14px;line-height:1.6;">
+          Questions? Reply to this email — we're here to help you succeed.
+        </p>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="https://tradelogpro.xyz/affiliates"
+             style="display:inline-block;background-color:#00D9FF;color:#000000;font-weight:600;padding:12px 32px;border-radius:8px;text-decoration:none;font-size:15px;">
+            View Affiliate Program
+          </a>
+        </div>
+      `),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send affiliate approval email:', error);
+    return { success: false, error };
+  }
+}
+
 export async function sendNotificationEmail(
   email: string,
   firstName: string,

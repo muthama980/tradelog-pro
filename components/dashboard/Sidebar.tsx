@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library, Shield, Users, ChevronDown, ChevronRight, Bell, Link2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, BarChart3, Brain, Plug, Settings, LogOut, X, Flag, HelpCircle, Library, Shield, Users, ChevronDown, ChevronRight, Bell, Link2, UserPlus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -172,6 +172,7 @@ export default function DashboardSidebar({ isOpen, onClose }: Props) {
                 {[
                   { href: '/dashboard/admin/notifications', label: 'Notifications', icon: Bell },
                   { href: '/dashboard/admin/referrals',    label: 'Referrals',     icon: Link2 },
+                  { href: '/dashboard/admin/affiliates',   label: 'Affiliates',    icon: UserPlus },
                   { href: '/dashboard/admin/trades',       label: 'Trades',        icon: BarChart3 },
                 ].map(item => {
                   const Icon   = item.icon;
