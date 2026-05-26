@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   Shield, Loader2, Check, AlertTriangle, X,
   ExternalLink, Copy, ChevronDown, ChevronUp,
-  UserPlus, Link2,
+  UserPlus, Link2, Trash2,
 } from 'lucide-react';
 import { CardSkeleton } from '@/components/dashboard/Skeleton';
 
@@ -62,6 +62,8 @@ export default function AdminAffiliatesPage() {
   const [toast,      setToast]      = useState<string | null>(null);
   const [toastErr,   setToastErr]   = useState<string | null>(null);
   const [actioning,  setActioning]  = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [clearingRejected, setClearingRejected] = useState(false);
 
   // Approval modal
   const [approvalModal,    setApprovalModal]    = useState<{ id: string; name: string; email: string } | null>(null);
@@ -160,6 +162,34 @@ export default function AdminAffiliatesPage() {
     setActioning(null);
     if (!res.ok) { showToast('Failed to update status', true); return; }
     showToast('Application rejected.');
+    load();
+  }
+
+  async function deleteApp(id: string) {
+    if (!confirm('Delete this application? This cannot be undone.')) return;
+    setDeletingId(id);
+    const res = await fetch('/api/admin/affiliates', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setDeletingId(null);
+    if (!res.ok) { showToast('Failed to delete', true); return; }
+    showToast('Application deleted.');
+    load();
+  }
+
+  async function clearRejected() {
+    if (!confirm('Delete all rejected applications? This cannot be undone.')) return;
+    setClearingRejected(true);
+    const res = await fetch('/api/admin/affiliates', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clearRejected: true }),
+    });
+    setClearingRejected(false);
+    if (!res.ok) { showToast('Failed to clear rejected applications', true); return; }
+    showToast('All rejected applications deleted.');
     load();
   }
 
@@ -353,7 +383,19 @@ export default function AdminAffiliatesPage() {
             {f}
           </button>
         ))}
-        <span className="ml-auto font-mono text-xs text-text-muted">{filtered.length} applications</span>
+        <div className="ml-auto flex items-center gap-3">
+          {(filter === 'rejected' || counts.rejected > 0) && (
+            <button
+              onClick={clearRejected}
+              disabled={clearingRejected || counts.rejected === 0}
+              className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-signal-red/30 text-signal-red text-[11px] font-mono uppercase tracking-widest hover:bg-signal-red/10 transition disabled:opacity-40"
+            >
+              {clearingRejected ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+              Clear All Rejected
+            </button>
+          )}
+          <span className="font-mono text-xs text-text-muted">{filtered.length} applications</span>
+        </div>
       </div>
 
       {/* Table */}
@@ -378,6 +420,7 @@ export default function AdminAffiliatesPage() {
                   <th className="text-left px-4 py-3 hidden xl:table-cell">Country</th>
                   <th className="text-left px-4 py-3">Applied</th>
                   <th className="text-center px-4 py-3">Status</th>
+                  <th className="px-4 py-3 w-px" />
                   <th className="px-4 py-3 w-px" />
                 </tr>
               </thead>
@@ -426,12 +469,26 @@ export default function AdminAffiliatesPage() {
                             ? <ChevronUp size={14} className="text-text-muted" />
                             : <ChevronDown size={14} className="text-text-muted" />}
                         </td>
+                        <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                          {app.status === 'rejected' && (
+                            <button
+                              onClick={() => deleteApp(app.id)}
+                              disabled={deletingId === app.id}
+                              className="text-signal-red/50 hover:text-signal-red transition disabled:opacity-40"
+                              title="Delete application"
+                            >
+                              {deletingId === app.id
+                                ? <Loader2 size={14} className="animate-spin" />
+                                : <Trash2 size={14} />}
+                            </button>
+                          )}
+                        </td>
                       </tr>
 
                       {/* Expanded row */}
                       {expanded && (
                         <tr key={`${app.id}-expanded`} className="border-b border-border/50 bg-bg-elevated/20">
-                          <td colSpan={9} className="px-5 py-5">
+                          <td colSpan={10} className="px-5 py-5">
                             <div className="space-y-5 max-w-3xl">
                               {/* Message */}
                               {app.message && (

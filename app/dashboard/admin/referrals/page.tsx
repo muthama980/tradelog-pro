@@ -635,8 +635,16 @@ export default function AdminReferralsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 hidden lg:table-cell">
-                          <p className="text-sm text-text truncate max-w-[180px]">{link.label || link.referrer_name || '—'}</p>
-                          {link.referrer_email && <p className="font-mono text-xs text-text-muted truncate">{link.referrer_email}</p>}
+                          {(() => {
+                            const primary = link.label || link.referrer_name || link.referrer_email || '—';
+                            const showEmail = link.referrer_email && primary !== link.referrer_email;
+                            return (
+                              <>
+                                <p className="text-sm text-text truncate max-w-[180px]">{primary}</p>
+                                {showEmail && <p className="font-mono text-xs text-text-muted truncate">{link.referrer_email}</p>}
+                              </>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3.5 text-right font-mono text-sm text-text-muted">{Math.round(link.commission_rate * 100)}%</td>
                         <td className="px-4 py-3.5 text-right font-mono text-sm text-text-muted">{link.total_clicks}</td>

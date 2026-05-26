@@ -34,6 +34,28 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ applications: data || [] });
 }
 
+export async function DELETE(req: NextRequest) {
+  const user = await assertAdmin();
+  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const admin = createAdminClient();
+  const body = await req.json();
+
+  if (body.clearRejected) {
+    const { error } = await admin.from('affiliate_applications').delete().eq('status', 'rejected');
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  const { id } = body;
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+
+  const { error } = await admin.from('affiliate_applications').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function PATCH(req: NextRequest) {
   const user = await assertAdmin();
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
